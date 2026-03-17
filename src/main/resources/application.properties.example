@@ -1,0 +1,11 @@
+spring.application.name=club-imperio-backend
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/club_imperio
+spring.datasource.username=postgres
+spring.datasource.password=INDICAR_CLAVE
+
+# Configuración de JPA / Hibernate
+spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
