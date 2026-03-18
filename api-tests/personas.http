@@ -1,0 +1,19 @@
+### Variable de Base URL
+@url = http://localhost:8080/api/personas
+
+### 1. Listar todas las personas
+GET {{url}}
+Accept: application/json
+
+### 2. Crear al primer socio (POST)
+POST {{url}}
+Content-Type: application/json
+
+{
+  "dni": "40011019",
+  "nombre": "Uriel",
+  "apellido": "Barrios",
+  "email": "uriel@clubimperio.com",
+  "fechaNacimiento": "1996-11-15",
+  "esSocio": true
+}
