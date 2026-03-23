@@ -17,3 +17,65 @@ Content-Type: application/json
   "fechaNacimiento": "1996-11-15",
   "esSocio": true
 }
+
+### 3. Crear al segundo socio (POST)
+POST {{url}}
+Content-Type: application/json
+
+{
+  "dni": "1111111",
+  "nombre": "sujeto",
+  "apellido": "prueba",
+  "email": "sujeto@clubimperio.com",
+  "fechaNacimiento": "1996-11-15",
+  "esSocio": true
+}
+
+### 4. Actualizar datos de un socio (PUT)
+# Escenario: El socio cambió su email y ya no es socio (baja administrativa)
+PUT {{url}}/b5b73a0f-1774-49f5-b471-eadf51ad4321
+Content-Type: application/json
+
+{
+  "nombre": "Uriel Ivan",
+  "apellido": "Barrios",
+  "email": "uriel.nuevo@gmail.com",
+  "telefonoPrincipal": "1122334455",
+  "esSocio": true,
+  "activo": true
+}
+
+### 5. Intentar actualizar un socio que NO existe
+# Prueba de robustez: Debería devolver 400 o 404 según nuestro ExceptionHandler
+PUT {{url}}/99999999
+Content-Type: application/json
+
+{
+  "nombre": "Fantasma"
+}
+
+### 6. Borrado Lógico de un socio (DELETE)
+# No elimina la fila de la DB, solo setea activo = false
+DELETE {{url}}/494efb36-b8cd-4d21-9a35-025d95af12e2
+
+### 7. Verificar el estado tras el borrado
+# Al hacer este GET, deberías ver "activo": false en el JSON
+GET {{url}}/494efb36-b8cd-4d21-9a35-025d95af12e2
+
+### 8. Traer absolutamente TODOS
+GET http://localhost:8080/api/personas
+
+### 9. Traer solo los ACTUADOS (activos)
+GET http://localhost:8080/api/personas?activo=true
+
+### 10. Traer solo los que SON SOCIOS y están ACTIVOS
+GET http://localhost:8080/api/personas?activo=true&esSocio=true
+
+### 11. Traer los que NO son socios pero están de alta (activos)
+GET http://localhost:8080/api/personas?activo=true&esSocio=false
+
+### 12. Traer solo los de baja (no activos)
+GET http://localhost:8080/api/personas?activo=false
+
+### 13. Obtener socio por DNI de forma segura
+GET http://localhost:8080/api/personas/buscar?dni=1111111

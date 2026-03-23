@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -16,8 +17,32 @@ public class PersonaService {
 
     // Listar todas las personas
     @Transactional(readOnly = true)
-    public List<Persona> listarTodos() {
+    /*public List<Persona> listarTodos() {
         return personaRepository.findAll();
+    }*/
+    public List<Persona> listarConFiltros(Boolean activo, Boolean esSocio) {
+        if (activo != null && esSocio != null) {
+            return personaRepository.findByActivoAndEsSocio(activo, esSocio);
+        }
+        if (activo != null) {
+            return personaRepository.findByActivo(activo);
+        }
+        if (esSocio != null) {
+            return personaRepository.findByEsSocio(esSocio);
+        }
+        return personaRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public Persona buscarPorId(UUID id) {
+        return personaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("No se encontró al socio con el identificador técnico proporcionado."));
+    }
+
+    @Transactional(readOnly = true)
+    public Persona buscarPorDni(String dni) {
+        return personaRepository.findByDni(dni)
+                .orElseThrow(() -> new RuntimeException("No existe socio con DNI: " + dni));
     }
 
     @Transactional
@@ -28,11 +53,37 @@ public class PersonaService {
         return personaRepository.save(persona);
     }
 
-    @Transactional(readOnly = true)
-    public Persona buscarPorDni(String dni) {
-        return personaRepository.findByDni(dni)
-                .orElseThrow(() -> new RuntimeException("Persona no encontrada con ese DNI"));
+    @Transactional
+    public Persona actualizar(UUID id, Persona datosNuevos) {
+        Persona personaExistente = buscarPorId(id);
+
+        if (datosNuevos.getNombre() != null && !datosNuevos.getNombre().isBlank()) {
+            personaExistente.setNombre(datosNuevos.getNombre());
+        }
+        if (datosNuevos.getApellido() != null && !datosNuevos.getApellido().isBlank()) {
+            personaExistente.setApellido(datosNuevos.getApellido());
+        }
+        if (datosNuevos.getEmail() != null && !datosNuevos.getEmail().isBlank()) {
+            personaExistente.setEmail(datosNuevos.getEmail());
+        }
+        if (datosNuevos.getTelefonoPrincipal() != null && !datosNuevos.getTelefonoPrincipal().isBlank()) {
+            personaExistente.setTelefonoPrincipal(datosNuevos.getTelefonoPrincipal());
+        }
+        if (datosNuevos.getEsSocio() != null){
+            personaExistente.setEsSocio(datosNuevos.getEsSocio());
+        }
+        if (datosNuevos.getActivo() != null) {
+            personaExistente.setActivo(datosNuevos.getActivo());
+        }
+
+        return personaRepository.save(personaExistente);
     }
 
+    @Transactional
+    public void eliminar(UUID id) {
+        Persona persona = buscarPorId(id);
+        persona.setActivo(false);
+        personaRepository.save(persona);
+    }
 
 }
