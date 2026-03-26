@@ -1,0 +1,31 @@
+### 1. Crear una actividad (Fútbol)
+POST http://localhost:8080/api/actividades
+Content-Type: application/json
+
+{
+  "nombre": "Fútbol 11",
+  "descripcion": "Entrenamiento de fútbol para adultos",
+  "precioMensual": 12500.0
+}
+
+### 2. Listar todas las actividades
+GET http://localhost:8080/api/actividades
+
+### 3. Buscar por Nombre (Query Param)
+GET http://localhost:8080/api/actividades/buscar?nombre=Fútbol 11
+
+### 4. Obtener una por ID
+GET http://localhost:8080/api/actividades/9df2bd1c-4c01-475c-a867-d029da399200
+
+### 5. Actualizar una actividad (Cambiar precio y cupo)
+PUT http://localhost:8080/api/actividades/9df2bd1c-4c01-475c-a867-d029da399200
+Content-Type: application/json
+
+{
+  "nombre": "Fútbol 11 PRO",
+  "precioMensual": 15000.0,
+  "cupoMaximo": 18
+}
+
+### 6. Borrar una actividad
+DELETE http://localhost:8080/api/actividades/9df2bd1c-4c01-475c-a867-d029da399200
