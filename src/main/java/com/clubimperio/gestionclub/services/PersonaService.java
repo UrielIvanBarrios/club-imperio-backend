@@ -50,6 +50,7 @@ public class PersonaService {
         if(personaRepository.existsByDni(persona.getDni())) {
             throw new RuntimeException("Ya existe una persona con el dni: "+persona.getDni());
         }
+        persona.setActivo(persona.getActivo());
         return personaRepository.save(persona);
     }
 

@@ -39,6 +39,7 @@ public class Persona {
     @Column(name = "es_socio")
     private Boolean esSocio = false;
 
+    @Column(nullable = false, columnDefinition = "boolean default true")
     private Boolean activo = true;
 
     @Column(name = "fecha_creacion", updatable = false)
@@ -47,5 +48,9 @@ public class Persona {
     @PrePersist
     protected void onCreate() {
         fechaCreacion = LocalDateTime.now();
+    }
+
+    public void setActivo(Boolean activo) {
+        this.activo = (activo == null) ? true : activo;
     }
 }

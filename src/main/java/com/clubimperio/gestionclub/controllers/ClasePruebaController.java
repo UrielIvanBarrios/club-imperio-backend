@@ -40,4 +40,13 @@ public class ClasePruebaController {
         clasePruebaService.marcarAsistencia(id, asistio, observaciones);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{id}/observacion")
+    public ResponseEntity<Void> agregarObservacion(
+            @PathVariable UUID id,
+            @RequestParam String nota
+    ) {
+        clasePruebaService.agregarObservacion(id, nota);
+        return ResponseEntity.noContent().build();
+    }
 }

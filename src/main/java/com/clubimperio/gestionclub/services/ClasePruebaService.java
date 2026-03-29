@@ -24,7 +24,10 @@ public class ClasePruebaService {
     public ClasePrueba registrarClasePrueba(String dni, UUID actividadId, LocalDateTime fechaSolicitada) {
         Persona persona = personaService.buscarPorDni(dni);
         Actividad actividad = actividadService.buscarPorId(actividadId);
-        if(!actividad.getActivo()){
+        if (persona.getActivo() == null || !persona.getActivo()) {
+            throw new RuntimeException("No se puede registrar una clase de prueba: La persona está inactiva.");
+        }
+        if(actividad.getActivo() == null ||!actividad.getActivo()){
             throw new RuntimeException("No se puede registrar una clase de prueba en una actividad inactiva.");
         }
         boolean tienePendiente = clasePruebaRepository.findByPersona_Dni(dni).stream()
@@ -50,11 +53,27 @@ public class ClasePruebaService {
 
     @Transactional
     public void marcarAsistencia(UUID claseId, boolean asistio, String observaciones){
-        ClasePrueba clase = clasePruebaRepository.findById(claseId)
-                .orElseThrow(() -> new RuntimeException("Clase de prueba no encontrada."));
+        ClasePrueba clase = buscarPorId(claseId);
         clase.setAsistio(asistio);
         clase.setObservaciones(observaciones);
         clasePruebaRepository.save(clase);
+    }
+
+    @Transactional
+    public void agregarObservacion(UUID claseId, String notaAdicional) {
+        ClasePrueba clase = buscarPorId(claseId);
+
+        // Concatenamos para no borrar lo que ya existía (historial)
+        String notaNueva = (clase.getObservaciones() == null) ? notaAdicional
+                : clase.getObservaciones() + " | Nota: " + notaAdicional;
+
+        clase.setObservaciones(notaNueva);
+        clasePruebaRepository.save(clase);
+    }
+
+    private ClasePrueba buscarPorId(UUID id) {
+        return clasePruebaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Clase de prueba no encontrada."));
     }
 
 }
