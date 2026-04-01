@@ -71,10 +71,6 @@ public class ActividadService {
             actividadExistente.setPrecioMensual(actividadActualizada.getPrecioMensual());
         }
 
-        if (actividadActualizada.getCupoMaximo() != null) {
-            actividadExistente.setCupoMaximo(actividadActualizada.getCupoMaximo());
-        }
-
         if (actividadActualizada.getActivo() != null) {
             actividadExistente.setActivo(actividadActualizada.getActivo());
         }
@@ -101,17 +97,11 @@ public class ActividadService {
         if (a.getPrecioMensual() == null || a.getPrecioMensual() < 0) {
             throw new RuntimeException("El precio mensual no puede ser nulo ni negativo.");
         }
-        if (a.getCupoMaximo() != null && a.getCupoMaximo() <= 0) {
-            throw new RuntimeException("El cupo máximo debe ser al menos de 1 persona.");
-        }
     }
 
     private void validarDatosParaUpdate(Actividad a) {
         if (a.getPrecioMensual() != null && a.getPrecioMensual() < 0) {
             throw new RuntimeException("El precio no puede ser negativo.");
-        }
-        if (a.getCupoMaximo() != null && a.getCupoMaximo() <= 0) {
-            throw new RuntimeException("El cupo debe ser mayor a 0.");
         }
     }
 

@@ -1,12 +1,12 @@
 ### Registrar una clase de prueba
-POST http://localhost:8080/api/clases-prueba/registrar?dni=40011019&actividadId=d0749cd4-c418-49a2-a5f9-883bed5691fa&fecha=2026-03-27T18:30:00
+POST http://localhost:8080/api/clases-prueba/registrar?dni=40011019&actividadId=97ba0788-5d3d-4f1a-aaf5-8cf134ca524f&fecha=2026-03-27T18:30:00
 
 ### Listar todas las clases de prueba
 GET http://localhost:8080/api/clases-prueba
 
 ### Marcar asistencia
-PATCH http://localhost:8080/api/clases-prueba/105f5fa0-fca2-4bb0-9cd4-f9948d5eefff/asistencia?asistio=true&observaciones=Le encanto la clase, se anota el lunes.
+PATCH http://localhost:8080/api/clases-prueba/97ba0788-5d3d-4f1a-aaf5-8cf134ca524f/asistencia?asistio=true&observaciones=Le encanto la clase, se anota el lunes.
 
 ### 3. Agregar otra nota más
-PATCH http://localhost:8080/api/clases-prueba/105f5fa0-fca2-4bb0-9cd4-f9948d5eefff/observacion?nota=Traer ficha médica.
+PATCH http://localhost:8080/api/clases-prueba/97ba0788-5d3d-4f1a-aaf5-8cf134ca524f/observacion?nota=Traer ficha médica.
 

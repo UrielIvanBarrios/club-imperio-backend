@@ -33,3 +33,16 @@ Códigos de Estado: Recordá que si el filtro no devuelve nada, el status sigue 
 *   **Body:** Campos obligatorios (dni, nombre, apellido, email).
 *   **Seguridad:** Validación de DNI único (Check Ciberdefensa: Previene duplicidad de identidad).
 *   **Response (201 Created):** Objeto creado con su UUID.
+
+Recurso: Inscripciones (El "Contrato" Socio-Actividad)
+
+### 1. Alta de Inscripción
+`POST /inscripciones?dni={dni}&comisionId={uuid}`
+
+**Validaciones de Negocio (Ciberdefensa):**
+
+* **Persona:** debe estar activa.
+* **Comisión:** debe estar activa.
+* **Socio:** no puede estar ya inscripto en esa comisión.
+* **Validación de Cupo:** Si inscriptos >= cupoMaximo, rebota con **error 400**.
+* **Response (201 Created):** Objeto Inscripción con fecha de alta.

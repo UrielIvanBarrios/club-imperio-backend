@@ -24,9 +24,6 @@ public class Actividad {
 
     private Double precioMensual;
 
-    @Column(nullable = true)
-    private Integer cupoMaximo;
-
     @Setter(AccessLevel.NONE)
     @Column(nullable = false, columnDefinition = "boolean default true")
     private Boolean activo = true;
