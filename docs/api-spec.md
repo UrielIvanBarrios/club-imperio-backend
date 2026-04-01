@@ -17,9 +17,9 @@ Códigos de Estado: Recordá que si el filtro no devuelve nada, el status sigue 
     *   `activo` (boolean): Filtra por estado lógico.
     *   `esSocio` (boolean): Filtra por condición de socio.
 *   **Response (200 OK):**
-    ```json
+    ```text
     [
-      { "id": "uuid", "nombre": "Uriel", "activo": true ... }
+      { "id": "uuid", "nombre": "Uriel", "activo": true, ... }
     ]
     ```
 

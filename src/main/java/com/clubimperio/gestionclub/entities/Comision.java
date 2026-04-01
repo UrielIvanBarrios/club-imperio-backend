@@ -32,10 +32,10 @@ public class Comision {
 
     @Builder.Default
     @Column(nullable = false)
-    private boolean activa = true;
+    private Boolean activa = true;
 
 
-    public void setActiva(boolean activa) {
+    public void setActiva(Boolean activa) {
         this.activa = activa;
     }
 }

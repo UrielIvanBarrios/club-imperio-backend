@@ -1,0 +1,32 @@
+package com.clubimperio.gestionclub.controllers;
+
+import com.clubimperio.gestionclub.entities.Inscripcion;
+import com.clubimperio.gestionclub.repositories.InscripcionRepository;
+import com.clubimperio.gestionclub.services.InscripcionService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/inscripciones")
+@RequiredArgsConstructor
+public class InscripcionController {
+    private final InscripcionService inscripcionService;
+
+    @PostMapping
+    public ResponseEntity<Inscripcion> inscribir(
+            @RequestParam String dni,
+            @RequestParam UUID comisionId
+    ){
+        return ResponseEntity.status(201).body(inscripcionService.inscribirSocio(dni, comisionId));
+    }
+
+    @GetMapping("/socio/{dni}")
+    public ResponseEntity<List<Inscripcion>> listarPorSocio(@PathVariable String dni){
+        return ResponseEntity.ok(inscripcionService.listarPorSocio(dni));
+    }
+}

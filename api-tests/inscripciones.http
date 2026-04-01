@@ -1,0 +1,8 @@
+### 1. Inscribir Socio
+POST http://localhost:8080/api/inscripciones?dni=40011019&comisionId=41885008-d00c-4060-b211-09bdac6289ce
+
+### 2. Intentar inscribir socio superando el cupo
+POST http://localhost:8080/api/inscripciones?dni=40011019&comisionId=d05be431-03de-4966-936a-0549039c048e
+
+### 3. Consultar inscripciones de un socio
+GET http://localhost:8080/api/inscripciones/socio/40011019
