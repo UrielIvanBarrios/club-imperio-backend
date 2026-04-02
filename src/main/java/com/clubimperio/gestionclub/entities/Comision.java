@@ -5,7 +5,9 @@ import lombok.*;
 import java.util.UUID;
 
 @Entity
-@Table(name = "comisiones")
+@Table(name = "comisiones", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"actividad_id", "nombre", "horario"})
+})
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor

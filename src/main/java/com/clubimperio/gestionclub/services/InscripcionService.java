@@ -58,3 +58,6 @@ public class InscripcionService {
         return inscripcionRepository.findByPersona_DniAndActivoTrue(dni);
     }
 }
+
+
+

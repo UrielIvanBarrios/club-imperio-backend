@@ -20,6 +20,15 @@ public class ComisionService {
     public Comision crearComision(UUID actividadId, String nombre, String horario, Integer cupo){
         Actividad actividad = actividadService.buscarPorId(actividadId);
 
+        boolean duplicado = comisionRepository.existsByActividad_ActividadIdAndNombreIgnoreCaseAndHorarioIgnoreCase(
+                actividadId, nombre, horario
+        );
+
+        if (duplicado) {
+            throw new RuntimeException("Ya existe una comisión para '" + actividad.getNombre() +
+                    "' con el nombre '" + nombre + "' en el horario '" + horario + "'.");
+        }
+
         Comision nueva = Comision.builder()
                 .actividad(actividad)
                 .nombre(nombre)

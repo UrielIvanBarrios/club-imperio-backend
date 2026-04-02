@@ -10,6 +10,12 @@ import java.util.UUID;
 @Repository
 public interface ComisionRepository extends JpaRepository<Comision, UUID> {
 
+    boolean existsByActividad_ActividadIdAndNombreIgnoreCaseAndHorarioIgnoreCase(
+            UUID actividadId,
+            String nombre,
+            String horario
+    );
+
     List<Comision> findByActividad_ActividadId(UUID actividadId);
 
     List<Comision> findByActivaTrue();
