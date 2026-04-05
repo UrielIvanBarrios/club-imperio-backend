@@ -29,4 +29,11 @@ public class InscripcionController {
     public ResponseEntity<List<Inscripcion>> listarPorSocio(@PathVariable String dni){
         return ResponseEntity.ok(inscripcionService.listarPorSocio(dni));
     }
+
+    @GetMapping("/comision/{comisionId}")
+    public ResponseEntity<List<Inscripcion>> listarPorComision(@PathVariable UUID comisionId) {
+        return ResponseEntity.ok(inscripcionService.listarPorComision(comisionId));
+    }
+
+
 }

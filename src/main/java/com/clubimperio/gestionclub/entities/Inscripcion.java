@@ -31,16 +31,18 @@ public class Inscripcion {
 
     @Builder.Default
     @Column(nullable = false)
-    private boolean activo = true;
+    private Boolean activo = true;
 
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;
 
     @PrePersist
     protected void onCreate() {
-        this.fechaCreacion = LocalDateTime.now();
-        if(this.fechaCreacion == null){
+        if (this.fechaCreacion == null) {
             this.fechaCreacion = LocalDateTime.now();
+        }
+        if (this.fechaInscripcion == null) {
+            this.fechaInscripcion = LocalDate.now();
         }
     }
 

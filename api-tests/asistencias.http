@@ -1,0 +1,14 @@
+### 1. Obtener la "Planilla" de la comisión (Para ver quiénes están anotados)
+# Copiá el UUID de la comisión que creaste antes
+GET http://localhost:8080/api/inscripciones/comision/57c1c07e-5689-42d6-a48c-bb2e1fc22c64
+
+### 2. Registrar Asistencia - CASO ÉXITO
+# Usá un inscripcionId que hayas obtenido en el paso anterior
+POST http://localhost:8080/api/asistencias?inscripcionId=a0c46144-4b23-4997-b8ea-0eb0e9d2dabb&presente=true&observaciones=Llegó a tiempo
+
+### 3. Registrar Asistencia con fecha pasada
+# Útil para cuando el profesor se olvidó de pasar lista ayer
+POST http://localhost:8080/api/asistencias?inscripcionId=a0c46144-4b23-4997-b8ea-0eb0e9d2dabb&fecha=2026-03-31&presente=true
+
+### 5. Ver historial de asistencias de ese socio
+GET http://localhost:8080/api/asistencias/historial/a0c46144-4b23-4997-b8ea-0eb0e9d2dabb

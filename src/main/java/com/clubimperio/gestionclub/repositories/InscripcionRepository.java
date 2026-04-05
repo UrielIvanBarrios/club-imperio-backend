@@ -14,4 +14,7 @@ public interface InscripcionRepository extends JpaRepository<Inscripcion, UUID> 
     boolean existsByPersona_DniAndComision_ComisionIdAndActivoTrue(String dni, UUID comisionId);
 
     List<Inscripcion> findByPersona_DniAndActivoTrue(String dni);
+
+    List<Inscripcion> findByComision_ComisionIdAndActivoTrue(UUID comisionId);
+
 }

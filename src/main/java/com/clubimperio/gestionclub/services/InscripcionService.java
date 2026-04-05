@@ -57,6 +57,17 @@ public class InscripcionService {
     public List<Inscripcion> listarPorSocio(String dni) {
         return inscripcionRepository.findByPersona_DniAndActivoTrue(dni);
     }
+
+    @Transactional(readOnly = true)
+    public List<Inscripcion> listarPorComision(UUID comisionId) {
+        return inscripcionRepository.findByComision_ComisionIdAndActivoTrue(comisionId);
+    }
+
+    @Transactional(readOnly = true)
+    public Inscripcion buscarPorId(UUID id) {
+        return inscripcionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Inscripción no encontrada."));
+    }
 }
 
 

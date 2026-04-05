@@ -1,5 +1,5 @@
 ### 1. Crear Comisión para Fútbol
-POST http://localhost:8080/api/comisiones?actividadId=07d936ee-4802-48b6-8fb6-7a5cf01c7ab0&nombre=Turno Tarde&horario=Lunes y Miércoles 18:00&cupo=20
+POST http://localhost:8080/api/comisiones?actividadId=d851160f-f1e4-4bf7-a5de-8ddd4217e609&nombre=Turno Tarde&horario=Lunes y Miércoles 18:00&cupo=20
 
 ### 2. Listar comisiones de una actividad
 GET http://localhost:8080/api/comisiones/actividad/07d936ee-4802-48b6-8fb6-7a5cf01c7ab0
