@@ -1,8 +1,8 @@
-package com.clubimperio.gestionclub.services;
+package com.clubimperio.gestionclub.membresia.services;
 
-import com.clubimperio.gestionclub.entities.Actividad;
-import com.clubimperio.gestionclub.entities.Comision;
-import com.clubimperio.gestionclub.repositories.ComisionRepository;
+import com.clubimperio.gestionclub.membresia.entities.Actividad;
+import com.clubimperio.gestionclub.membresia.entities.Comision;
+import com.clubimperio.gestionclub.membresia.repositories.ComisionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

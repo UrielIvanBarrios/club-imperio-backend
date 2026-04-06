@@ -1,4 +1,4 @@
-package com.clubimperio.gestionclub.entities;
+package com.clubimperio.gestionclub.membresia.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;

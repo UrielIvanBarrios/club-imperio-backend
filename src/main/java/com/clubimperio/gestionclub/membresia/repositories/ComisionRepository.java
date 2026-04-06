@@ -1,6 +1,6 @@
-package com.clubimperio.gestionclub.repositories;
+package com.clubimperio.gestionclub.membresia.repositories;
 
-import com.clubimperio.gestionclub.entities.Comision;
+import com.clubimperio.gestionclub.membresia.entities.Comision;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,10 +1,8 @@
-package com.clubimperio.gestionclub.controllers;
+package com.clubimperio.gestionclub.membresia.controllers;
 
-import com.clubimperio.gestionclub.entities.Inscripcion;
-import com.clubimperio.gestionclub.repositories.InscripcionRepository;
-import com.clubimperio.gestionclub.services.InscripcionService;
+import com.clubimperio.gestionclub.membresia.entities.Inscripcion;
+import com.clubimperio.gestionclub.membresia.services.InscripcionService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

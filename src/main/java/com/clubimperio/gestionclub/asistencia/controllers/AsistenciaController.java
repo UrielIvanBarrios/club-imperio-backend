@@ -1,7 +1,7 @@
-package com.clubimperio.gestionclub.controllers;
+package com.clubimperio.gestionclub.asistencia.controllers;
 
-import com.clubimperio.gestionclub.entities.Asistencia;
-import com.clubimperio.gestionclub.services.AsistenciaService;
+import com.clubimperio.gestionclub.asistencia.entities.Asistencia;
+import com.clubimperio.gestionclub.asistencia.services.AsistenciaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;

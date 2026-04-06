@@ -1,11 +1,10 @@
-package com.clubimperio.gestionclub.services;
+package com.clubimperio.gestionclub.membresia.services;
 
-import com.clubimperio.gestionclub.entities.Comision;
-import com.clubimperio.gestionclub.entities.Inscripcion;
-import com.clubimperio.gestionclub.entities.Persona;
-import com.clubimperio.gestionclub.repositories.InscripcionRepository;
+import com.clubimperio.gestionclub.membresia.entities.Comision;
+import com.clubimperio.gestionclub.membresia.entities.Inscripcion;
+import com.clubimperio.gestionclub.membresia.entities.Persona;
+import com.clubimperio.gestionclub.membresia.repositories.InscripcionRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

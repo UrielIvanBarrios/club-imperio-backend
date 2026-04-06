@@ -1,7 +1,7 @@
-package com.clubimperio.gestionclub.controllers;
+package com.clubimperio.gestionclub.membresia.controllers;
 
-import com.clubimperio.gestionclub.entities.ClasePrueba;
-import com.clubimperio.gestionclub.services.ClasePruebaService;
+import com.clubimperio.gestionclub.membresia.entities.ClasePrueba;
+import com.clubimperio.gestionclub.membresia.services.ClasePruebaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;

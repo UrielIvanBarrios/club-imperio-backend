@@ -1,7 +1,7 @@
-package com.clubimperio.gestionclub.controllers;
+package com.clubimperio.gestionclub.membresia.controllers;
 
-import com.clubimperio.gestionclub.entities.Persona;
-import com.clubimperio.gestionclub.services.PersonaService;
+import com.clubimperio.gestionclub.membresia.entities.Persona;
+import com.clubimperio.gestionclub.membresia.services.PersonaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,8 +1,7 @@
-package com.clubimperio.gestionclub.repositories;
+package com.clubimperio.gestionclub.asistencia.repositories;
 
-import com.clubimperio.gestionclub.entities.Asistencia;
+import com.clubimperio.gestionclub.asistencia.entities.Asistencia;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;

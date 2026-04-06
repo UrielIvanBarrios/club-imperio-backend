@@ -1,7 +1,7 @@
-package com.clubimperio.gestionclub.services;
+package com.clubimperio.gestionclub.membresia.services;
 
-import com.clubimperio.gestionclub.entities.Persona;
-import com.clubimperio.gestionclub.repositories.PersonaRepository;
+import com.clubimperio.gestionclub.membresia.entities.Persona;
+import com.clubimperio.gestionclub.membresia.repositories.PersonaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

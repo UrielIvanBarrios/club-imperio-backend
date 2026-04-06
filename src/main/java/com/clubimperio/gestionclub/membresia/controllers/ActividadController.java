@@ -1,7 +1,7 @@
-package com.clubimperio.gestionclub.controllers;
+package com.clubimperio.gestionclub.membresia.controllers;
 
-import com.clubimperio.gestionclub.entities.Actividad;
-import com.clubimperio.gestionclub.services.ActividadService;
+import com.clubimperio.gestionclub.membresia.entities.Actividad;
+import com.clubimperio.gestionclub.membresia.services.ActividadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

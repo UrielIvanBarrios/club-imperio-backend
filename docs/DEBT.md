@@ -34,3 +34,8 @@ Este documento detalla las simplificaciones tomadas para el MVP y las mejoras ne
 ## 7. Trazabilidad de Usuario (Spring Security)
 * **Estado actual:** No hay sistema de login.
 * **Mejora:** Implementar `@CreatedBy` y `@LastModifiedBy`. En el club es vital saber qué administrativo borró una clase o cobró un arancel por seguridad contable.
+
+## 8. Clases de Prueba: Validación de Disponibilidad Horaria
+* **Estado actual:** La `fechaSolicitada` es un `LocalDateTime` libre que no se valida contra los horarios reales de la `Comision`.
+* **Riesgo:** Agendar una clase de prueba en un día o horario donde la actividad no se dicta (ej: pedir Fútbol un domingo a las 3 AM), generando frustración en el potencial socio y desorden operativo.
+* **Mejora necesaria:** Una vez implementado el **Punto 1 (Entidad Horario)**, desarrollar un validador en `ClasePruebaService` que verifique que el `DayOfWeek` y el rango horario de la solicitud coincidan con alguna de las comisiones activas de la actividad elegida.
