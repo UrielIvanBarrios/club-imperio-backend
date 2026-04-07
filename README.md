@@ -19,6 +19,7 @@ Para una comprensión profunda del diseño y uso del sistema, consultá los arch
 * 📜 **[Arquitectura Modular](./docs/ARCHITECTURE.md):** Explicación del diseño por contextos delimitados (Membresía, Asistencia, Pagos).
 * 🛠️ **[Deuda Técnica y Decisiones](./docs/DEBT.md):** Registro de compromisos técnicos y simplificaciones de diseño.
 * 📡 **[Especificación de la API](./docs/api-spec.md):** Listado detallado de endpoints, parámetros de entrada y modelos de respuesta.
+* 📋 **[Backlog de Desarrollo](./docs/BACKLOG.md):** Listado de tareas pendientes, tickets de mejora y funcionalidades futuras.
 
 ## 🛠️ Stack Tecnológico
 * **Lenguaje:** Java 17+
