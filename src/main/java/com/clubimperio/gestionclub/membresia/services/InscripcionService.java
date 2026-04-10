@@ -67,6 +67,14 @@ public class InscripcionService {
         return inscripcionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Inscripción no encontrada."));
     }
+
+    @Transactional
+    public void darDeBaja(UUID id) {
+        Inscripcion inscripcion = buscarPorId(id);
+        inscripcion.setActivo(false);
+        inscripcion.setFechaBaja(LocalDate.now());
+        inscripcionRepository.save(inscripcion);
+    }
 }
 
 

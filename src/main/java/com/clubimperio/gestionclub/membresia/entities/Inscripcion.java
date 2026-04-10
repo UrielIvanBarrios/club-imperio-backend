@@ -36,6 +36,9 @@ public class Inscripcion {
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;
 
+    @Column(name = "fecha_baja")
+    private LocalDate fechaBaja;
+
     @PrePersist
     protected void onCreate() {
         if (this.fechaCreacion == null) {

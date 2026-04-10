@@ -33,5 +33,10 @@ public class InscripcionController {
         return ResponseEntity.ok(inscripcionService.listarPorComision(comisionId));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> darDeBaja(@PathVariable UUID id) {
+        inscripcionService.darDeBaja(id);
+        return ResponseEntity.noContent().build();
+    }
 
 }
