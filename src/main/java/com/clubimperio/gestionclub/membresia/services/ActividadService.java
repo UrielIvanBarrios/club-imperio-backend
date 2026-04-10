@@ -2,6 +2,7 @@ package com.clubimperio.gestionclub.membresia.services;
 
 import com.clubimperio.gestionclub.membresia.entities.Actividad;
 import com.clubimperio.gestionclub.membresia.repositories.ActividadRepository;
+import com.clubimperio.gestionclub.membresia.repositories.ComisionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ActividadService {
     private final ActividadRepository actividadRepository;
+    private final ComisionRepository comisionRepository;
 
     @Transactional(readOnly = true)
     public List<Actividad> listarTodas() {
@@ -48,21 +50,23 @@ public class ActividadService {
     @Transactional
     public Actividad actualizar(UUID id, Actividad actividadActualizada) {
         Actividad actividadExistente = buscarPorId(id);
-
         validarDatosParaUpdate(actividadActualizada);
+        String nombreNuevo = actividadActualizada.getNombre();
 
-        // Validar si quiere cambiar el nombre a uno que ya existe en OTRA actividad
-        if (actividadActualizada.getNombre() != null &&
-                !actividadExistente.getNombre().equalsIgnoreCase(actividadActualizada.getNombre())) {
-            if (actividadRepository.existsByNombre(actividadActualizada.getNombre())) {
-                throw new RuntimeException("No se puede actualizar: El nombre " + actividadActualizada.getNombre() + " ya está en uso.");
+        if (nombreNuevo != null) {
+            nombreNuevo = nombreNuevo.trim();
+            if (!nombreNuevo.isEmpty()) {
+                if (!nombreNuevo.equalsIgnoreCase(actividadExistente.getNombre())) {
+                    if (actividadRepository.existsByNombre(nombreNuevo)) {
+                        throw new RuntimeException("El nombre '" + nombreNuevo + "' ya está en uso.");
+                    }
+                }
+                actividadExistente.setNombre(nombreNuevo);
+            } else {
+                throw new RuntimeException("El nombre no puede estar en blanco.");
             }
         }
 
-        // Pisamos los datos
-        if (actividadActualizada.getNombre() != null) {
-            actividadExistente.setNombre(actividadActualizada.getNombre());
-        }
         if (actividadActualizada.getDescripcion() != null) {
             actividadExistente.setDescripcion(actividadActualizada.getDescripcion());
         }
@@ -80,7 +84,7 @@ public class ActividadService {
 
     @Transactional
     public void eliminar(UUID id) {
-        Actividad actividad = buscarPorId(id); // Ya incluye el chequeo de existencia
+        Actividad actividad = buscarPorId(id);
 
         if (!actividad.getActivo()) {
             throw new RuntimeException("La actividad ya se encuentra desactivada.");
@@ -88,6 +92,10 @@ public class ActividadService {
 
         actividad.setActivo(false);
         actividadRepository.save(actividad);
+
+        comisionRepository.desactivarComisionesPorActividad(id);
+
+        System.out.println("Actividad " + actividad.getNombre() + " y sus comisiones han sido desactivadas.");
     }
 
     private void validarDatosActividad(Actividad a) {
