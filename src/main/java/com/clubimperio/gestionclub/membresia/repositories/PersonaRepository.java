@@ -15,4 +15,6 @@ public interface PersonaRepository extends JpaRepository<Persona, UUID> {
     List<Persona> findByActivoAndEsSocio(Boolean activo, Boolean esSocio);
     List<Persona> findByActivo(Boolean activo);
     List<Persona> findByEsSocio(Boolean esSocio);
+    long countByActivo(Boolean activo);
+    long countByActivoAndEsSocio(Boolean activo, Boolean esSocio);
 }

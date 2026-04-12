@@ -87,4 +87,13 @@ public class PersonaService {
         personaRepository.save(persona);
     }
 
+    @Transactional(readOnly = true)
+    public long contarPorEstado(Boolean activo) {
+        return personaRepository.countByActivo(activo);
+    }
+
+    @Transactional(readOnly = true)
+    public long contarSociosPorEstado(Boolean activo, Boolean esSocio) {
+        return personaRepository.countByActivoAndEsSocio(activo, esSocio);
+    }
 }

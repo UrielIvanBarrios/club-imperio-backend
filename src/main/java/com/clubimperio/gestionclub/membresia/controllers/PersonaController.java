@@ -12,7 +12,9 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/personas")
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+
 public class PersonaController {
     private final PersonaService personaService;
 
@@ -60,4 +62,16 @@ public class PersonaController {
         personaService.eliminar(id); // Deberás adaptar tu método eliminar para recibir UUID
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/stats/count")
+    public ResponseEntity<Long> obtenerConteo(
+            @RequestParam Boolean activo,
+            @RequestParam(required = false) Boolean esSocio
+    ) {
+        if (esSocio != null) {
+            return ResponseEntity.ok(personaService.contarSociosPorEstado(activo, esSocio));
+        }
+        return ResponseEntity.ok(personaService.contarPorEstado(activo));
+    }
+
 }
