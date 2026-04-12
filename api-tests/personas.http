@@ -93,8 +93,3 @@ GET http://localhost:8080/api/personas/stats/count?activo=true&esSocio=true
 
 ### 4. Obtener personas Activas que NO son socios
 GET http://localhost:8080/api/personas/stats/count?activo=true&esSocio=false
-
-### --- OTRAS PRUEBAS DE INTEGRACIÓN ---
-
-### Listar solo socios activos (La lista que usará tu amigo en el Front)
-GET http://localhost:8080/api/personas/socios-activos
