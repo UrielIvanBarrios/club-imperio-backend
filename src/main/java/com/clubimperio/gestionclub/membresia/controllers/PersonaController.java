@@ -59,19 +59,25 @@ public class PersonaController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable UUID id) {
-        personaService.eliminar(id); // Deberás adaptar tu método eliminar para recibir UUID
+        personaService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/stats/count")
-    public ResponseEntity<Long> obtenerConteo(
+    public ResponseEntity<ConteoResponse> obtenerConteo(
             @RequestParam Boolean activo,
             @RequestParam(required = false) Boolean esSocio
     ) {
+        long cantidad;
         if (esSocio != null) {
-            return ResponseEntity.ok(personaService.contarSociosPorEstado(activo, esSocio));
+            cantidad = personaService.contarSociosPorEstado(activo, esSocio);
+        } else {
+            cantidad = personaService.contarPorEstado(activo);
         }
-        return ResponseEntity.ok(personaService.contarPorEstado(activo));
+
+        // Devolvemos el objeto record. Jackson lo convierte a {"total": X} automáticamente.
+        return ResponseEntity.ok(new ConteoResponse(cantidad));
     }
 
+    private record ConteoResponse(long total) {}
 }
