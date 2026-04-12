@@ -79,3 +79,22 @@ GET http://localhost:8080/api/personas?activo=false
 
 ### 13. Obtener socio por DNI de forma segura
 GET http://localhost:8080/api/personas/buscar?dni=1111111
+
+### --- ESTADÍSTICAS DE PERSONAS ---
+
+### 1. Obtener total de personas ACTIVAS (Socios y No Socios)
+GET http://localhost:8080/api/personas/stats/count?activo=true
+
+### 2. Obtener total de personas INACTIVAS (Bajas)
+GET http://localhost:8080/api/personas/stats/count?activo=false
+
+### 3. Obtener el "Número de Oro": Socios Activos
+GET http://localhost:8080/api/personas/stats/count?activo=true&esSocio=true
+
+### 4. Obtener personas Activas que NO son socios
+GET http://localhost:8080/api/personas/stats/count?activo=true&esSocio=false
+
+### --- OTRAS PRUEBAS DE INTEGRACIÓN ---
+
+### Listar solo socios activos (La lista que usará tu amigo en el Front)
+GET http://localhost:8080/api/personas/socios-activos
