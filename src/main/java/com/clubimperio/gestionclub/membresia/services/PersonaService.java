@@ -1,11 +1,13 @@
 package com.clubimperio.gestionclub.membresia.services;
 
+import com.clubimperio.gestionclub.membresia.entities.Membresia;
 import com.clubimperio.gestionclub.membresia.entities.Persona;
 import com.clubimperio.gestionclub.membresia.repositories.PersonaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,20 +19,17 @@ public class PersonaService {
 
     // Listar todas las personas
     @Transactional(readOnly = true)
-    /*public List<Persona> listarTodos() {
-        return personaRepository.findAll();
-    }*/
     public List<Persona> listarConFiltros(Boolean activo, Boolean esSocio) {
-        if (activo != null && esSocio != null) {
-            return personaRepository.findByActivoAndEsSocio(activo, esSocio);
+        List<Persona> base = (activo != null)
+                ? personaRepository.findByActivo(activo)
+                : personaRepository.findAll();
+
+        if (esSocio == null) {
+            return base;
         }
-        if (activo != null) {
-            return personaRepository.findByActivo(activo);
-        }
-        if (esSocio != null) {
-            return personaRepository.findByEsSocio(esSocio);
-        }
-        return personaRepository.findAll();
+        return base.stream()
+                .filter(p -> p.isSocioActivo() == esSocio)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -46,11 +45,21 @@ public class PersonaService {
     }
 
     @Transactional
-    public Persona guardar(Persona persona) {
+    public Persona guardar(Persona persona, boolean seAsocia, LocalDateTime fechaAltaManual) {
         if(personaRepository.existsByDni(persona.getDni())) {
             throw new RuntimeException("Ya existe una persona con el dni: "+persona.getDni());
         }
-        persona.setActivo(persona.getActivo());
+        if (seAsocia) {
+            LocalDateTime inicioMembresia = (fechaAltaManual != null)
+                    ? fechaAltaManual
+                    : LocalDateTime.now();
+
+            Membresia primeraMembresia = Membresia.builder()
+                    .persona(persona)
+                    .fechaAlta(inicioMembresia)
+                    .build();
+            persona.getMembresias().add(primeraMembresia);
+        }
         return personaRepository.save(persona);
     }
 
@@ -69,9 +78,6 @@ public class PersonaService {
         }
         if (datosNuevos.getTelefonoPrincipal() != null && !datosNuevos.getTelefonoPrincipal().isBlank()) {
             personaExistente.setTelefonoPrincipal(datosNuevos.getTelefonoPrincipal());
-        }
-        if (datosNuevos.getEsSocio() != null){
-            personaExistente.setEsSocio(datosNuevos.getEsSocio());
         }
         if (datosNuevos.getActivo() != null) {
             personaExistente.setActivo(datosNuevos.getActivo());
@@ -94,6 +100,6 @@ public class PersonaService {
 
     @Transactional(readOnly = true)
     public long contarSociosPorEstado(Boolean activo, Boolean esSocio) {
-        return personaRepository.countByActivoAndEsSocio(activo, esSocio);
+        return listarConFiltros(activo, esSocio).size();
     }
 }

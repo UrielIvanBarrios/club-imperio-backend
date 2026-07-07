@@ -3,6 +3,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -36,8 +38,9 @@ public class Persona {
 
     private String email;
 
-    @Column(name = "es_socio")
-    private Boolean esSocio = false;
+    @OneToMany(mappedBy = "persona", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @Builder.Default
+    private List<Membresia> membresias = new ArrayList<>();
 
     @Column(nullable = false, columnDefinition = "boolean default true")
     private Boolean activo = true;
@@ -50,7 +53,12 @@ public class Persona {
         fechaCreacion = LocalDateTime.now();
     }
 
-    public void setActivo(Boolean activo) {
-        this.activo = (activo == null) ? true : activo;
+    public boolean isSocioActivo() {
+        if (this.membresias == null) return false;
+        LocalDateTime ahora = LocalDateTime.now();
+
+        return this.membresias.stream()
+                .anyMatch(m -> !m.getFechaAlta().isAfter(ahora) // fechaAlta <= ahora
+                        && (m.getFechaBaja() == null || m.getFechaBaja().isAfter(ahora))); // fechaBaja es null o futuro
     }
 }
