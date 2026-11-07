@@ -80,6 +80,18 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>3.0.3</version> <!-- 3.0.x = Spring Boot 4.0 (2.x es para Boot 3) -->
         </dependency>
+        <!-- Importación de socios: lectura de Excel (.xlsx) -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.5.1</version>
+        </dependency>
+        <!-- Importación de socios: lectura de CSV (comillas, separadores, BOM) -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.14.1</version>
+        </dependency>
     </dependencies>
 
     <build>

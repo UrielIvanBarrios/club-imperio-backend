@@ -8,6 +8,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -35,6 +36,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
         return construirRespuesta(HttpStatus.FORBIDDEN, "No tenés permisos para realizar esta acción.");
+    }
+
+    // 413: archivo más grande que spring.servlet.multipart.max-file-size (importación de socios).
+    // Sin este handler caería en el de RuntimeException como 400 y con un mensaje técnico en inglés.
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleMaxUploadSize(MaxUploadSizeExceededException ex) {
+        return construirRespuesta(HttpStatus.CONTENT_TOO_LARGE, "El archivo supera el tamaño máximo permitido (5 MB).");
     }
 
     // 400: errores de negocio lanzados por los services

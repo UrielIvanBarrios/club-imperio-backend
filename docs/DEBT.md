@@ -30,6 +30,8 @@ Este documento detalla las simplificaciones tomadas para el MVP y las mejoras ne
 * **Estado actual:** Carga manual de datos.
 * **Necesidad:** El club tiene miles de registros en Excel. La carga manual es propensa a errores.
 * **Mejora:** Desarrollar un servicio de importación masiva con validación de integridad (limpieza de DNI duplicados, formatos de fecha, etc.).
+* **✅ Resuelto:** `POST /api/personas/importar` acepta `.csv` y `.xlsx`, valida cada fila y devuelve un reporte con las filas válidas y las filas con error. Se puede usar en modo vista previa con `?simular=true` (ver `api-spec.md`).
+* ~~**Pendiente:** el alta manual no validaba el formato del DNI~~ → resuelto: la regla está en `PersonaService` y la comparten el alta manual y la importación.
 
 ## 7. Trazabilidad de Usuario (Spring Security)
 * **Estado actual:** No hay sistema de login.

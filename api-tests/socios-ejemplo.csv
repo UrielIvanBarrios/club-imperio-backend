@@ -1,0 +1,8 @@
+﻿dni;nombre;apellido;fecha_nacimiento;telefono;email;socio
+30111222;Lucía;Fernández;12/05/1988;1150001111;lucia.fernandez@mail.com;SI
+31222333;Martín;Sosa;03/09/1992;1150002222;martin.sosa@mail.com;SI
+32.333.444;Valentina;Ruiz;21/01/2012;;;NO
+33444555;Tomás;Acuña;2009-11-30;1150003333;;SI
+34A55666;Error;FormatoDni;;;;NO
+30111222;Error;DniRepetido;;;;SI
+35666777;;SinNombre;31/02/2001;;mail-invalido;quizas

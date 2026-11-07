@@ -49,6 +49,8 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/error").permitAll()
                         // ABM de usuarios: solo ADMIN
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
+                        // Importación masiva de socios: solo ADMIN
+                        .requestMatchers("/api/personas/importar/**").hasRole("ADMIN")
                         // Todo lo demás: cualquier usuario logueado (ADMIN o USER)
                         .anyRequest().authenticated()
                 )

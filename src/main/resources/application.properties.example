@@ -23,3 +23,8 @@ app.admin.nombre=Administrador
 # --- CORS ---
 # Origenes del front autorizados a llamar a la API (separados por coma). Nunca usar "*".
 app.cors.allowed-origins=http://localhost:5173
+
+# --- Importacion de socios (CSV / Excel) ---
+spring.servlet.multipart.max-file-size=5MB
+spring.servlet.multipart.max-request-size=5MB
+app.importacion.max-filas=5000

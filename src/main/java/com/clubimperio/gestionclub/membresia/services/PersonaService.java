@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +47,16 @@ public class PersonaService {
 
     @Transactional
     public Persona guardar(Persona persona, boolean seAsocia, LocalDateTime fechaAltaManual) {
+        // Misma regla de DNI para el alta manual y para la importación (que también pasa por acá)
+        String dni = normalizarDni(persona.getDni());
+        if (dni.isEmpty()) {
+            throw new RuntimeException("El DNI es obligatorio.");
+        }
+        if (!esDniValido(dni)) {
+            throw new RuntimeException(mensajeDniInvalido(persona.getDni()));
+        }
+        persona.setDni(dni);
+
         if(personaRepository.existsByDni(persona.getDni())) {
             throw new RuntimeException("Ya existe una persona con el dni: "+persona.getDni());
         }
@@ -101,5 +112,23 @@ public class PersonaService {
     @Transactional(readOnly = true)
     public long contarSociosPorEstado(Boolean activo, Boolean esSocio) {
         return listarConFiltros(activo, esSocio).size();
+    }
+
+    // ---------- Regla de DNI (única fuente: la usan el alta manual y la importación) ----------
+
+    private static final Pattern DNI = Pattern.compile("^\\d{6,8}$");
+
+    // "40.011.019" o "40 011 019" -> "40011019" (formatos habituales al tipear o en las planillas)
+    public static String normalizarDni(String dni) {
+        return dni == null ? "" : dni.trim().replaceAll("[.\\s-]", "");
+    }
+
+    // Recibe el DNI ya normalizado: de 6 a 8 dígitos, sin letras
+    public static boolean esDniValido(String dniNormalizado) {
+        return DNI.matcher(dniNormalizado).matches();
+    }
+
+    public static String mensajeDniInvalido(String dniOriginal) {
+        return "DNI con formato inválido: '" + dniOriginal + "' (deben ser de 6 a 8 dígitos, sin letras).";
     }
 }

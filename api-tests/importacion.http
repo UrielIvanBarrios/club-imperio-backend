@@ -1,0 +1,31 @@
+### Importación de socios (solo ADMIN). Ejecutar antes el login de auth.http para tener {{token}}.
+### socios-ejemplo.csv tiene 4 filas válidas y 3 con errores a propósito (para la demo).
+@url = http://localhost:8080/api
+
+### 1. Descargar la plantilla CSV
+GET {{url}}/personas/importar/plantilla
+Authorization: Bearer {{token}}
+
+### 2. Vista previa: valida y devuelve el reporte SIN guardar nada
+POST {{url}}/personas/importar?simular=true
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="archivo"; filename="socios-ejemplo.csv"
+Content-Type: text/csv
+
+< ./socios-ejemplo.csv
+--WebAppBoundary--
+
+### 3. Importar de verdad: guarda las filas válidas y reporta las que tienen error
+POST {{url}}/personas/importar
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="archivo"; filename="socios-ejemplo.csv"
+Content-Type: text/csv
+
+< ./socios-ejemplo.csv
+--WebAppBoundary--

@@ -127,9 +127,17 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
 ### 4. Crear persona
 `POST /api/personas`
 * **Body:** JSON `PersonaCreateRequest` (mínimo `dni`, `nombre`, `apellido`; `activo` default `true` si se omite/null).
-* **Validación:** `dni` debe ser único (`existsByDni`).
+* **Validación de `dni`:**
+  * Es obligatorio.
+  * Se normaliza quitando espacios, puntos y guiones (`" 40.011.019 "` → `40011019`) y se guarda así.
+  * Tiene que tener **de 6 a 8 dígitos**, sin letras.
+  * Tiene que ser único (`existsByDni`).
+  * Es la misma regla que aplica la importación (ver endpoint 8).
 * **201 Created:** `PersonaResponse` creado con su UUID (con `membresias: [{...}]` si `seAsocia=true`).
-* **400 Bad Request:** `"Ya existe una persona con el dni: {dni}"`.
+* **400 Bad Request:**
+  * `"El DNI es obligatorio."`
+  * `"DNI con formato inválido: '{dni}' (deben ser de 6 a 8 dígitos, sin letras)."`
+  * `"Ya existe una persona con el dni: {dni}"`
 
 ### 5. Actualizar persona (parcial)
 `PUT /api/personas/{id}`
@@ -145,6 +153,46 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
 `GET /api/personas/stats/count?activo={boolean}&esSocio={boolean}`
 * **Query params:** `activo` (**obligatorio**), `esSocio` (opcional).
 * **200 OK:** `{ "total": <long> }`
+
+### 8. Importar socios desde CSV / Excel (solo ADMIN)
+`POST /api/personas/importar?simular={boolean}`, de tipo `multipart/form-data`, con el campo **`archivo`** (`.csv` o `.xlsx`).
+* **`simular=true`:** valida y devuelve el reporte **sin guardar nada**. Sirve para mostrar una vista previa en el front antes de confirmar. Por defecto vale `false`.
+* **Encabezado (fila 1):**
+  * Obligatorias: `dni`, `nombre`, `apellido`.
+  * Opcionales: `fecha_nacimiento`, `telefono`, `email`, `socio`.
+  * No importan las mayúsculas, las tildes ni los espacios. También se aceptan alias: `documento`, `nombres`, `apellidos`, `nacimiento`, `celular`, `mail`, `es socio`. Las columnas desconocidas se ignoran, y el orden de las columnas es libre.
+* **Formato:**
+  * CSV con separador `;` o `,` (se detecta solo), en UTF-8 o Windows-1252, que es lo que exporta Excel.
+  * Excel: se lee la primera hoja; las fechas y los números se toman de las celdas reales.
+  * Límites: 5 MB (`spring.servlet.multipart.max-file-size`) y 5000 filas (`app.importacion.max-filas`).
+* **Validaciones por fila.** Se informan **todos** los errores de cada fila, no solo el primero:
+  * `dni`: es obligatorio y tiene que tener de 6 a 8 dígitos. Se aceptan puntos y espacios: `40.011.019` → `40011019`.
+  * **DNI duplicado**, ya sea porque existe en la base o porque está repetido en el archivo (el mensaje indica la fila de la primera aparición).
+  * `nombre` y `apellido`: obligatorios, hasta 100 caracteres.
+  * `fecha_nacimiento`: formatos `dd/mm/aaaa`, `aaaa-mm-dd` o `dd-mm-aaaa`. Tiene que ser una fecha real (no acepta 31/02) y no puede ser futura.
+  * `email`: formato válido. Se guarda en minúsculas.
+  * `telefono`: hasta 20 caracteres.
+  * `socio`: `SI`/`NO` (también `sí`, `s`, `x`, `1`, `true` / `n`, `0`, `false` o vacío). Con `SI`, se le crea la primera `Membresia`.
+* **Política:**
+  * Las filas con errores se saltean y **las válidas se guardan todas juntas en una transacción**: si falla el guardado de una, no se guarda ninguna.
+  * Las filas vacías se ignoran.
+  * Cada fila se da de alta con la misma lógica que el ABM manual (`PersonaService.guardar`).
+* **200 OK:**
+```json
+{
+  "archivo": "socios.csv", "simulacion": false,
+  "totalFilas": 7, "filasValidas": 4, "filasConError": 3, "importadas": 4,
+  "validas":  [ { "fila": 2, "dni": "30111222", "nombre": "Lucía", "apellido": "Fernández", "socio": true } ],
+  "errores":  [ { "fila": 6, "dni": "34A55666", "errores": ["DNI con formato inválido: '34A55666' (deben ser de 6 a 8 dígitos, sin letras)."] } ]
+}
+```
+`fila` es el número de fila tal como se ve en Excel (la 1 es el encabezado).
+* **400:** sin archivo, extensión no soportada, archivo dañado, faltan columnas obligatorias, columna repetida, archivo sin filas o con más de 5000.
+* **413:** el archivo supera los 5 MB.
+* **403:** el token es de un `USER`.
+
+### 9. Descargar plantilla de importación (solo ADMIN)
+`GET /api/personas/importar/plantilla` → **200 OK:** archivo `plantilla-socios.csv`, con separador `;` y BOM UTF-8, así Excel en español lo abre con las columnas separadas y las tildes bien. Trae el encabezado y 2 filas de ejemplo.
 
 ---
 
