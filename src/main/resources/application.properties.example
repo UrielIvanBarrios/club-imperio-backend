@@ -9,3 +9,17 @@ spring.jpa.show-sql=true
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 
+
+# --- Seguridad (JWT) ---
+# Clave de firma HS256 (minimo 32 caracteres). Generar una propia, por ejemplo: openssl rand -base64 48
+app.jwt.secret=CAMBIAR_POR_UNA_CLAVE_ALEATORIA_DE_32_O_MAS_CARACTERES
+app.jwt.expiracion-horas=8
+
+# ADMIN inicial: se crea solo si la tabla usuarios esta vacia
+app.admin.email=admin@clubimperio.com
+app.admin.password=CAMBIAR_ESTA_PASSWORD
+app.admin.nombre=Administrador
+
+# --- CORS ---
+# Origenes del front autorizados a llamar a la API (separados por coma). Nunca usar "*".
+app.cors.allowed-origins=http://localhost:5173

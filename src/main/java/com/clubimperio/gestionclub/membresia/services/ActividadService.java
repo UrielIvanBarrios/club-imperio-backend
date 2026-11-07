@@ -3,18 +3,23 @@ package com.clubimperio.gestionclub.membresia.services;
 import com.clubimperio.gestionclub.membresia.entities.Actividad;
 import com.clubimperio.gestionclub.membresia.repositories.ActividadRepository;
 import com.clubimperio.gestionclub.membresia.repositories.ComisionRepository;
+import com.clubimperio.gestionclub.membresia.repositories.InscripcionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ActividadService {
     private final ActividadRepository actividadRepository;
     private final ComisionRepository comisionRepository;
+    private final InscripcionRepository inscripcionRepository;
 
     @Transactional(readOnly = true)
     public List<Actividad> listarTodas() {
@@ -93,9 +98,13 @@ public class ActividadService {
         actividad.setActivo(false);
         actividadRepository.save(actividad);
 
+        // Cascada completa: Actividad -> Comisiones -> Inscripciones (mismo criterio que la baja de una Comisión).
+        // Sin el último paso quedaban alumnos "inscriptos" en comisiones inactivas. Todo en esta misma transacción.
         comisionRepository.desactivarComisionesPorActividad(id);
+        int bajasInscripciones = inscripcionRepository.darDeBajaActivasPorActividad(id, LocalDate.now());
 
-        System.out.println("Actividad " + actividad.getNombre() + " y sus comisiones han sido desactivadas.");
+        log.info("Actividad '{}' desactivada junto con sus comisiones y {} inscripciones activas.",
+                actividad.getNombre(), bajasInscripciones);
     }
 
     private void validarDatosActividad(Actividad a) {

@@ -1,5 +1,6 @@
 package com.clubimperio.gestionclub.membresia.controllers;
 
+import com.clubimperio.gestionclub.membresia.dtos.ComisionUpdateRequest;
 import com.clubimperio.gestionclub.membresia.entities.Comision;
 import com.clubimperio.gestionclub.membresia.services.ComisionService;
 import lombok.RequiredArgsConstructor;
@@ -26,13 +27,28 @@ public class ComisionController {
         return ResponseEntity.status(201).body(nueva);
     }
 
+    // Por defecto solo las activas (lo que necesita el listado del front). ?incluirInactivas=true trae todas.
     @GetMapping("/actividad/{actividadId}")
-    public ResponseEntity<List<Comision>> listarPorActividad(@PathVariable UUID actividadId){
-        return ResponseEntity.ok(comisionService.listarPorActividad(actividadId));
+    public ResponseEntity<List<Comision>> listarPorActividad(
+            @PathVariable UUID actividadId,
+            @RequestParam(defaultValue = "false") boolean incluirInactivas
+    ){
+        return ResponseEntity.ok(comisionService.listarPorActividad(actividadId, incluirInactivas));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Comision> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(comisionService.buscarPorId(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Comision> actualizar(@PathVariable UUID id, @RequestBody ComisionUpdateRequest request) {
+        return ResponseEntity.ok(comisionService.actualizar(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable UUID id) {
+        comisionService.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 }

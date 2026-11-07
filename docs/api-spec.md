@@ -5,8 +5,39 @@
 
 > Nota: no hay versionado de rutas (`/api/v1`) implementado todavía; todos los recursos cuelgan directo de `/api`.
 
+## Autenticación
+Todos los endpoints requieren un JWT, **excepto** `POST /api/auth/login` (y Swagger en el perfil `dev`). El token se obtiene en el login y se envía en cada request:
+```
+Authorization: Bearer <token>
+```
+* El token dura **8 horas** (`app.jwt.expiracion-horas`). No hay refresh token: al vencer, el back responde 401 y hay que volver a loguearse.
+* Roles: `ADMIN` (todo, incluido el ABM de usuarios) y `USER` (todo excepto `/api/usuarios/**`).
+* El token es stateless y está firmado con HS256. Lleva `sub` (id del usuario), `email` y `rol`, va firmado pero **no cifrado**.
+
+### Swagger UI (solo perfil `dev`)
+1. Levantar con el perfil dev: `./mvnw spring-boot:run -Dspring-boot.run.profiles=dev`. En IntelliJ, poner `dev` en *Active profiles*.
+2. Abrir `http://localhost:8080/swagger-ui/index.html`. El JSON de OpenAPI está en `/v3/api-docs`.
+3. Ejecutar `POST /api/auth/login`, copiar el `token` de la respuesta, tocar **Authorize** y pegarlo, sin el prefijo "Bearer".
+
+A partir de ahí, Swagger manda el token en todas las requests. Sin el perfil `dev`, Swagger está deshabilitado y responde 404.
+
+### CORS
+Solo se aceptan llamadas desde los orígenes de `app.cors.allowed-origins` (por defecto `http://localhost:5173`, el front en Vite). La configuración está centralizada en `SecurityConfig`: ningún controller usa `@CrossOrigin`. Un preflight desde otro origen recibe **403**.
+
 ## Formato de errores
-No hay excepciones tipadas: cualquier `RuntimeException` lanzada por la capa de Servicio es capturada por un `@RestControllerAdvice` genérico y siempre responde **400 Bad Request** (incluso para "no encontrado", que conceptualmente sería 404) con este cuerpo:
+Todos los errores, incluidos los de seguridad, salen con el mismo cuerpo JSON (ver abajo). El código HTTP depende del tipo de error:
+
+| Status | Cuándo | `message` |
+|---|---|---|
+| **401 Unauthorized** | Falta el token, es inválido o está vencido | `"Sesión inválida o vencida. Iniciá sesión nuevamente."` |
+| **401 Unauthorized** | Login con email o contraseña incorrectos, o usuario inactivo | `"Email o contraseña incorrectos."` (mismo mensaje en todos los casos, para no revelar qué emails existen) |
+| **401 Unauthorized** | `GET /api/auth/me` de un usuario desactivado | `"Tu usuario fue desactivado. Contactá a un administrador."` |
+| **403 Forbidden** | Token válido, pero el rol no alcanza (USER en `/api/usuarios`) | `"No tenés permisos para realizar esta acción."` |
+| **400 Bad Request** | Error de negocio lanzado por un service | mensaje específico |
+
+Para el front: **401 → cerrar sesión y redirigir al login; 403 → mostrar "sin permisos"; 400 → mostrar `message` al usuario.**
+
+Los errores de negocio no tienen excepciones tipadas: cualquier `RuntimeException` lanzada por la capa de Servicio responde **400 Bad Request**, incluso "no encontrado", que conceptualmente sería 404. El cuerpo es este:
 ```json
 {
   "timestamp": "2026-07-03T10:15:30",
@@ -19,6 +50,54 @@ Comportamiento por defecto a tener en cuenta:
 * Si un filtro de listado no devuelve resultados, el status sigue siendo **200 OK** con lista vacía `[]` (no 404).
 * `GET /api/personas` sin query params trae **todas** las personas (activas e inactivas) — no filtra por defecto.
 * El módulo **Personas** ya usa DTOs de request/response (ver más abajo) — no expone la entidad JPA `Persona` ni `Membresia` directamente. El resto de los módulos (`Actividad`, `Comision`, `Inscripcion`, `ClasePrueba`, `Asistencia`) todavía reciben y devuelven las entidades JPA tal cual (ver `docs/DEBT.md`, punto 4, sobre el riesgo de Mass Assignment).
+
+---
+
+## Recurso: Auth
+### 1. Login (público)
+`POST /api/auth/login`
+* **Body:** `{ "email": "...", "password": "..." }`. El email no distingue mayúsculas y se le quitan los espacios.
+* **200 OK:** `{ "token": "<jwt>", "tipo": "Bearer", "expiraEn": "<instante ISO-8601 UTC>", "usuario": UsuarioResponse }`
+* **401:** `"Email o contraseña incorrectos."`
+
+### 2. Usuario logueado
+`GET /api/auth/me`
+* **200 OK:** `UsuarioResponse`
+* **401:** token inválido o vencido, o usuario desactivado.
+
+### 3. Cambiar mi contraseña
+`PUT /api/auth/me/password`
+* **Body:** `{ "passwordActual": "...", "passwordNueva": "..." }`
+* **204 No Content.**
+* **400:** contraseña actual incorrecta, nueva de menos de 8 caracteres, o nueva igual a la actual. Es 400 y no 401 para que el front no cierre la sesión.
+
+---
+
+## Recurso: Usuarios (solo ADMIN)
+Con un token de `USER`, todos estos endpoints devuelven **403**.
+
+* **`UsuarioResponse`:** `usuarioId` (UUID), `email`, `nombre`, `rol` (`ADMIN` | `USER`), `activo`, `fechaCreacion`, `fechaUltimaModificacion`. **Nunca** incluye la contraseña ni su hash.
+* **`UsuarioCreateRequest`:** `email`, `nombre`, `password` (8 caracteres como mínimo) y `rol`. Todos son obligatorios.
+* **`UsuarioUpdateRequest`:** `email`, `nombre`, `rol`, `activo`, `password`. Todos son opcionales y los `null` se ignoran. `password` permite que el ADMIN resetee la contraseña de otro usuario.
+
+### 1. Listar usuarios
+`GET /api/usuarios` → **200 OK:** `UsuarioResponse[]` (activos e inactivos)
+
+### 2. Obtener por ID
+`GET /api/usuarios/{id}` → **200 OK:** `UsuarioResponse` · **400** si no existe
+
+### 3. Crear usuario
+`POST /api/usuarios` → **201 Created:** `UsuarioResponse`
+* **400:** email duplicado (sin distinguir mayúsculas), email con formato inválido, nombre vacío, rol faltante o contraseña de menos de 8 caracteres.
+
+### 4. Actualizar usuario (parcial)
+`PUT /api/usuarios/{id}` → **200 OK:** `UsuarioResponse`
+* **400:** un ADMIN no puede quitarse a sí mismo el rol ADMIN ni desactivarse, para que el sistema nunca se quede sin ADMIN.
+
+### 5. Desactivar usuario (baja lógica)
+`DELETE /api/usuarios/{id}` → **204 No Content**. Marca `activo = false`.
+* **400:** si es el propio usuario o si ya estaba desactivado.
+* El usuario desactivado ya no puede loguearse. Un token que ya tenía sigue valiendo hasta que vence, pero `GET /api/auth/me` le responde 401.
 
 ---
 
@@ -99,7 +178,7 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
 
 ### 6. Eliminar actividad (baja lógica en cascada)
 `DELETE /api/actividades/{id}`
-* Marca `activo = false` y **desactiva en cascada todas las comisiones** asociadas a esa actividad.
+* Marca `activo = false` y desactiva en cascada **todas las comisiones** de la actividad **y sus inscripciones activas** (`activo = false`, `fechaBaja = hoy`). Todo ocurre en una sola transacción, y el historial de asistencias se conserva.
 * **204 No Content**.
 * **400 Bad Request:** si la actividad ya estaba desactivada.
 
@@ -110,17 +189,36 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
 
 ### 1. Crear comisión
 `POST /api/comisiones?actividadId={uuid}&nombre={string}&horario={string}&cupo={int?}`
-* **Validación:** la actividad debe existir; no puede existir ya una comisión con la misma combinación `(actividad, nombre, horario)` (case-insensitive). `cupo` es opcional (sin tope si se omite).
+* **Validación:** la actividad debe existir; no puede existir ya una comisión con la misma combinación `(actividad, nombre, horario)` (case-insensitive). `cupo` es opcional (sin tope si se omite); si viene, **tiene que ser mayor a 0**, igual que en el PUT.
 * **201 Created:** objeto creado (`activa = true` por defecto).
-* **400 Bad Request:** actividad inexistente o combinación duplicada.
+* **400 Bad Request:** actividad inexistente, combinación duplicada o `cupo` ≤ 0.
 
 ### 2. Listar comisiones de una actividad
-`GET /api/comisiones/actividad/{actividadId}`
-* **200 OK:** `Comision[]` (incluye activas e inactivas).
+`GET /api/comisiones/actividad/{actividadId}?incluirInactivas={boolean}`
+* **Query param (opcional):** `incluirInactivas`, por defecto `false`.
+* **200 OK:** `Comision[]`. Por defecto **solo trae las activas**; con `incluirInactivas=true` trae todas.
 
 ### 3. Obtener por ID
 `GET /api/comisiones/{id}`
 * **200 OK** / **400 Bad Request** si no existe.
+
+### 4. Actualizar comisión (parcial)
+`PUT /api/comisiones/{id}`
+* **Body:** JSON `ComisionUpdateRequest` = `{ "nombre": "...", "horario": "...", "cupoMaximo": 20 }`. Todos los campos son opcionales: los `null` se ignoran y a `nombre`/`horario` se les quitan los espacios. No permite cambiar la actividad ni el estado (la baja tiene su propio `DELETE`).
+* **Validaciones:**
+  * la comisión debe estar activa;
+  * `nombre` y `horario` no pueden quedar en blanco;
+  * la combinación `(actividad, nombre, horario)` sigue siendo única, sin distinguir mayúsculas y excluyendo a la propia comisión;
+  * `cupoMaximo` tiene que ser mayor a 0 y **no puede ser menor que la cantidad de inscriptos activos**.
+* **200 OK:** `Comision` actualizada.
+* **400 Bad Request:** cualquiera de las validaciones anteriores.
+
+### 5. Dar de baja comisión (baja lógica en cascada)
+`DELETE /api/comisiones/{id}`
+* Marca `activa = false` y **da de baja todas sus inscripciones activas** (`activo = false`, `fechaBaja = hoy`), en una sola transacción. No borra registros, y el historial de asistencias se conserva.
+* Después de la baja, la comisión ya no acepta inscripciones, y sus inscripciones no aceptan asistencias.
+* **204 No Content.**
+* **400 Bad Request:** si no existe o ya estaba dada de baja.
 
 ---
 

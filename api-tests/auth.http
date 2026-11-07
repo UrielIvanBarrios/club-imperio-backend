@@ -1,0 +1,69 @@
+### Ejecutar PRIMERO: el login guarda el token en la variable global {{token}},
+### que usan todos los demás archivos .http en el header Authorization.
+@url = http://localhost:8080/api
+
+### 1. Login como ADMIN (la contraseña está en app.admin.password de application.properties)
+POST {{url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@clubimperio.com",
+  "password": "CAMBIAR_POR_LA_DE_APPLICATION_PROPERTIES"
+}
+
+> {% client.global.set("token", response.body.token); %}
+
+### 2. Perfil del usuario logueado
+GET {{url}}/auth/me
+Authorization: Bearer {{token}}
+
+### 3. Cambiar mi contraseña
+PUT {{url}}/auth/me/password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "passwordActual": "actual1234",
+  "passwordNueva": "nueva12345"
+}
+
+### 4. Sin token -> 401
+GET {{url}}/personas
+
+### --- ABM de usuarios (solo ADMIN; con token de USER -> 403) ---
+
+### 5. Listar usuarios
+GET {{url}}/usuarios
+Authorization: Bearer {{token}}
+
+### 6. Crear usuario
+POST {{url}}/usuarios
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "operador@clubimperio.com",
+  "nombre": "Operador de Campo",
+  "password": "operador123",
+  "rol": "USER"
+}
+
+> {% client.global.set("usuarioId", response.body.usuarioId); %}
+
+### 7. Obtener por ID
+GET {{url}}/usuarios/{{usuarioId}}
+Authorization: Bearer {{token}}
+
+### 8. Actualizar (parcial; "password" opcional = reset por ADMIN)
+PUT {{url}}/usuarios/{{usuarioId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Operador Renombrado",
+  "rol": "USER"
+}
+
+### 9. Baja lógica
+DELETE {{url}}/usuarios/{{usuarioId}}
+Authorization: Bearer {{token}}

@@ -1,12 +1,16 @@
 ### Registrar una clase de prueba
 POST http://localhost:8080/api/clases-prueba/registrar?dni=40011019&actividadId=97ba0788-5d3d-4f1a-aaf5-8cf134ca524f&fecha=2026-03-27T18:30:00
+Authorization: Bearer {{token}}
 
 ### Listar todas las clases de prueba
 GET http://localhost:8080/api/clases-prueba
+Authorization: Bearer {{token}}
 
 ### Marcar asistencia
 PATCH http://localhost:8080/api/clases-prueba/97ba0788-5d3d-4f1a-aaf5-8cf134ca524f/asistencia?asistio=true&observaciones=Le encanto la clase, se anota el lunes.
+Authorization: Bearer {{token}}
 
 ### 3. Agregar otra nota más
 PATCH http://localhost:8080/api/clases-prueba/97ba0788-5d3d-4f1a-aaf5-8cf134ca524f/observacion?nota=Traer ficha médica.
+Authorization: Bearer {{token}}
 

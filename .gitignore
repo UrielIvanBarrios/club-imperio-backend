@@ -34,3 +34,8 @@ build/
 
 
 src/main/resources/application.properties
+
+### Archivos privados del TP3 (no se suben) ###
+docs/plan-tp3.md
+docs/tp3-registro.md
+CLAUDE.local.md

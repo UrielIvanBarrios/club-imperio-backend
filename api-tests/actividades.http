@@ -1,5 +1,6 @@
 ### 1. Crear una actividad (Fútbol)
 POST http://localhost:8080/api/actividades
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -10,15 +11,19 @@ Content-Type: application/json
 
 ### 2. Listar todas las actividades
 GET http://localhost:8080/api/actividades
+Authorization: Bearer {{token}}
 
 ### 3. Buscar por Nombre (Query Param)
 GET http://localhost:8080/api/actividades/buscar?nombre=Fútbol 11
+Authorization: Bearer {{token}}
 
 ### 4. Obtener una por ID
 GET http://localhost:8080/api/actividades/9df2bd1c-4c01-475c-a867-d029da399200
+Authorization: Bearer {{token}}
 
 ### 5. Actualizar una actividad (Cambiar precio y cupo)
 PUT http://localhost:8080/api/actividades/9df2bd1c-4c01-475c-a867-d029da399200
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -29,3 +34,4 @@ Content-Type: application/json
 
 ### 6. Borrar una actividad
 DELETE http://localhost:8080/api/actividades/9df2bd1c-4c01-475c-a867-d029da399200
+Authorization: Bearer {{token}}

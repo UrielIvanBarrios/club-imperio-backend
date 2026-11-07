@@ -1,11 +1,30 @@
 ### 1. Crear Comisión para Fútbol
 POST http://localhost:8080/api/comisiones?actividadId=d851160f-f1e4-4bf7-a5de-8ddd4217e609&nombre=Turno Tarde&horario=Lunes y Miércoles 18:00&cupo=20
+Authorization: Bearer {{token}}
 
-### 2. Listar comisiones de una actividad
+### 2. Listar comisiones de una actividad (solo activas; agregar ?incluirInactivas=true para todas)
 GET http://localhost:8080/api/comisiones/actividad/07d936ee-4802-48b6-8fb6-7a5cf01c7ab0
+Authorization: Bearer {{token}}
 
-### 3. Crear Comisión cupo 0
+### 3. Crear Comisión cupo 0 -> 400 "El cupo máximo debe ser mayor a cero."
 POST http://localhost:8080/api/comisiones?actividadId=b48d47a0-3f2e-481c-97c9-8f5d5c033015&nombre=Turno Mañana&horario=Lunes y Miércoles 09:00&cupo=0
+Authorization: Bearer {{token}}
 
 ### 4. Crear Comisión sin cupo
 POST http://localhost:8080/api/comisiones?actividadId=b48d47a0-3f2e-481c-97c9-8f5d5c033015&nombre=Turno Medio dia&horario=Lunes y Miércoles 12:00
+Authorization: Bearer {{token}}
+
+### 5. Actualizar comisión (parcial: nombre, horario y/o cupoMaximo)
+PUT http://localhost:8080/api/comisiones/REEMPLAZAR_COMISION_ID
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Turno Tarde",
+  "horario": "Lunes y Miércoles 19:00",
+  "cupoMaximo": 25
+}
+
+### 6. Dar de baja comisión (baja lógica + baja de sus inscripciones activas)
+DELETE http://localhost:8080/api/comisiones/REEMPLAZAR_COMISION_ID
+Authorization: Bearer {{token}}

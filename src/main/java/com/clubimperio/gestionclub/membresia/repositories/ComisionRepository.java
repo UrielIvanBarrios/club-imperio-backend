@@ -19,7 +19,17 @@ public interface ComisionRepository extends JpaRepository<Comision, UUID> {
             String horario
     );
 
+    // Misma validación de duplicado pero excluyendo a la propia comisión (para el PUT)
+    boolean existsByActividad_ActividadIdAndNombreIgnoreCaseAndHorarioIgnoreCaseAndComisionIdNot(
+            UUID actividadId,
+            String nombre,
+            String horario,
+            UUID comisionId
+    );
+
     List<Comision> findByActividad_ActividadId(UUID actividadId);
+
+    List<Comision> findByActividad_ActividadIdAndActivaTrue(UUID actividadId);
 
     List<Comision> findByActivaTrue();
 

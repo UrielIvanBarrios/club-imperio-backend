@@ -15,7 +15,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/personas")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 
 public class PersonaController {
