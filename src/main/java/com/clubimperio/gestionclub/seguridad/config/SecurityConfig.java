@@ -11,7 +11,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -29,7 +28,8 @@ import java.util.List;
 public class SecurityConfig {
 
     private final ErroresSeguridadHandler erroresSeguridadHandler;
-    private final JwtAuthenticationConverter jwtAuthenticationConverter;
+    // Arma la autenticación con el usuario ACTUAL de la base (estado y rol), no con lo que dice el token
+    private final UsuarioActualJwtConverter usuarioActualJwtConverter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -55,8 +55,9 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 // Valida el "Authorization: Bearer <token>" de cada request con el JwtDecoder de JwtConfig
+                // (firma y expiración) y después carga al usuario desde la base (activo y rol actuales).
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(usuarioActualJwtConverter))
                         .authenticationEntryPoint(erroresSeguridadHandler)
                         .accessDeniedHandler(erroresSeguridadHandler)
                 )

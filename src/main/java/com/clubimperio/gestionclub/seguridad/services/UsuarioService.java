@@ -72,6 +72,11 @@ public class UsuarioService {
         if (esElMismo && Boolean.FALSE.equals(request.activo())) {
             throw new RuntimeException("No podés desactivar tu propio usuario.");
         }
+        // El reset sin contraseña actual es para ayudar a OTRO usuario que se la olvidó. Para la propia cuenta
+        // se exige la actual: si el ADMIN deja la sesión abierta, nadie puede cambiarle la contraseña y quedarse con la cuenta.
+        if (esElMismo && request.password() != null) {
+            throw new RuntimeException("Para cambiar tu propia contraseña usá PUT /api/auth/me/password, que pide la contraseña actual.");
+        }
 
         if (request.email() != null) {
             String email = normalizarEmail(request.email());

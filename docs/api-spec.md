@@ -12,7 +12,13 @@ Authorization: Bearer <token>
 ```
 * El token dura **8 horas** (`app.jwt.expiracion-horas`). No hay refresh token: al vencer, el back responde 401 y hay que volver a loguearse.
 * Roles: `ADMIN` (todo, incluido el ABM de usuarios) y `USER` (todo excepto `/api/usuarios/**`).
-* El token es stateless y está firmado con HS256. Lleva `sub` (id del usuario), `email` y `rol`, va firmado pero **no cifrado**.
+* El token está firmado con HS256. Lleva `sub` (id del usuario), `email` y `rol`, va firmado pero **no cifrado**.
+* **En cada request autenticada, el back carga al usuario desde la base por el `sub` del token** y usa su estado y su rol **actuales**:
+  * si el usuario está desactivado, responde 401 con `"Tu usuario fue desactivado. Contactá a un administrador."`;
+  * si el usuario ya no existe, responde 401 con `"Sesión inválida o vencida. Iniciá sesión nuevamente."`;
+  * los permisos salen del rol de la base, no del claim `rol`. Si un ADMIN le cambia el rol a alguien, el cambio rige desde su siguiente request, aunque su token diga otro rol. El claim `rol` queda solo como dato informativo para el front.
+  
+  El costo es una consulta a la base por clave primaria en cada request.
 
 ### Swagger UI (solo perfil `dev`)
 1. Levantar con el perfil dev: `./mvnw spring-boot:run -Dspring-boot.run.profiles=dev`. En IntelliJ, poner `dev` en *Active profiles*.
@@ -31,8 +37,9 @@ Todos los errores, incluidos los de seguridad, salen con el mismo cuerpo JSON (v
 |---|---|---|
 | **401 Unauthorized** | Falta el token, es inválido o está vencido | `"Sesión inválida o vencida. Iniciá sesión nuevamente."` |
 | **401 Unauthorized** | Login con email o contraseña incorrectos, o usuario inactivo | `"Email o contraseña incorrectos."` (mismo mensaje en todos los casos, para no revelar qué emails existen) |
-| **401 Unauthorized** | `GET /api/auth/me` de un usuario desactivado | `"Tu usuario fue desactivado. Contactá a un administrador."` |
-| **403 Forbidden** | Token válido, pero el rol no alcanza (USER en `/api/usuarios`) | `"No tenés permisos para realizar esta acción."` |
+| **401 Unauthorized** | Cualquier request con el token de un usuario que fue desactivado | `"Tu usuario fue desactivado. Contactá a un administrador."` |
+| **401 Unauthorized** | Token válido de un usuario que ya no existe en la base | `"Sesión inválida o vencida. Iniciá sesión nuevamente."` |
+| **403 Forbidden** | Token válido, pero el rol **actual** del usuario (el de la base) no alcanza (USER en `/api/usuarios`) | `"No tenés permisos para realizar esta acción."` |
 | **400 Bad Request** | Error de negocio lanzado por un service | mensaje específico |
 
 Para el front: **401 → cerrar sesión y redirigir al login; 403 → mostrar "sin permisos"; 400 → mostrar `message` al usuario.**
@@ -78,7 +85,7 @@ Con un token de `USER`, todos estos endpoints devuelven **403**.
 
 * **`UsuarioResponse`:** `usuarioId` (UUID), `email`, `nombre`, `rol` (`ADMIN` | `USER`), `activo`, `fechaCreacion`, `fechaUltimaModificacion`. **Nunca** incluye la contraseña ni su hash.
 * **`UsuarioCreateRequest`:** `email`, `nombre`, `password` (8 caracteres como mínimo) y `rol`. Todos son obligatorios.
-* **`UsuarioUpdateRequest`:** `email`, `nombre`, `rol`, `activo`, `password`. Todos son opcionales y los `null` se ignoran. `password` permite que el ADMIN resetee la contraseña de otro usuario.
+* **`UsuarioUpdateRequest`:** `email`, `nombre`, `rol`, `activo`, `password`. Todos son opcionales y los `null` se ignoran. `password` permite que el ADMIN resetee la contraseña de **otro** usuario sin conocer la actual. Para la propia cuenta no se puede: hay que usar `PUT /api/auth/me/password`.
 
 ### 1. Listar usuarios
 `GET /api/usuarios` → **200 OK:** `UsuarioResponse[]` (activos e inactivos)
@@ -92,12 +99,14 @@ Con un token de `USER`, todos estos endpoints devuelven **403**.
 
 ### 4. Actualizar usuario (parcial)
 `PUT /api/usuarios/{id}` → **200 OK:** `UsuarioResponse`
-* **400:** un ADMIN no puede quitarse a sí mismo el rol ADMIN ni desactivarse, para que el sistema nunca se quede sin ADMIN.
+* **400:**
+  * un ADMIN no puede quitarse a sí mismo el rol ADMIN ni desactivarse, para que el sistema nunca se quede sin ADMIN;
+  * si el `id` es el del usuario logueado y viene `password`, responde `"Para cambiar tu propia contraseña usá PUT /api/auth/me/password, que pide la contraseña actual."` y no se modifica ningún campo del request.
 
 ### 5. Desactivar usuario (baja lógica)
 `DELETE /api/usuarios/{id}` → **204 No Content**. Marca `activo = false`.
 * **400:** si es el propio usuario o si ya estaba desactivado.
-* El usuario desactivado ya no puede loguearse. Un token que ya tenía sigue valiendo hasta que vence, pero `GET /api/auth/me` le responde 401.
+* El usuario desactivado ya no puede loguearse, y el token que ya tenía deja de servir: **su siguiente request a cualquier endpoint responde 401**.
 
 ---
 
