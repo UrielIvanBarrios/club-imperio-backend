@@ -90,7 +90,7 @@ Vínculo Persona ↔ Comisión (el "contrato" del socio).
 | `fecha_creacion` | TIMESTAMP | seteada por `@PrePersist`, no actualizable |
 | `fecha_baja` | DATE | nullable, seteada al dar de baja |
 
-Sin restricción `UNIQUE` a nivel de BD para "una persona no puede tener dos inscripciones activas a la misma comisión" — esa regla se valida en `InscripcionService` (a nivel aplicación, no a nivel esquema).
+Sin restricción `UNIQUE` a nivel de BD para "una persona no puede tener dos inscripciones activas a la misma comisión". Esa regla y la del cupo se validan en `InscripcionService`, **con la fila de la comisión bloqueada** (`SELECT ... FOR UPDATE` sobre `comisiones`) mientras dura la transacción. Así, dos inscripciones simultáneas a la misma comisión se procesan de a una y ninguna de las dos reglas se puede saltar por concurrencia. Una restricción en la base para "activa" necesitaría un índice único parcial (`WHERE activo`), y eso queda para cuando haya migraciones (ver `DEBT.md` #10).
 
 ## Tabla: `clases_prueba`
 | Columna | Tipo | Restricciones |
@@ -113,7 +113,19 @@ Sin restricción `UNIQUE` a nivel de BD para "una persona no puede tener dos ins
 | `presente` | BOOLEAN | default `true` |
 | `observaciones` | VARCHAR(255) | nullable |
 
-Sin restricción `UNIQUE (inscripcion_id, fecha)` a nivel de BD — la prevención de doble carga del mismo día se valida en `AsistenciaService`, no en el esquema.
+**Restricción `uk_asistencia_inscripcion_fecha` = `UNIQUE (inscripcion_id, fecha)`:** una sola asistencia por inscripción y fecha.
+* **Está declarada en la entidad** (`@UniqueConstraint` en `Asistencia`). `AsistenciaService` además la chequea antes de guardar, para dar un mensaje claro en el caso normal.
+* **Por qué también en la base:** dos requests simultáneas pueden pasar las dos el chequeo del service. La restricción frena a la segunda, y el service traduce esa violación al mismo 400 de "ya existe".
+* **Con `ddl-auto=update` no conviene confiar en Hibernate** para crearla sobre una tabla que ya existe y tiene datos. Si encuentra duplicados, no la crea y no avisa. Por eso se aplicó a mano:
+  ```sql
+  -- 1) Verificar que no haya duplicados (tiene que devolver 0 filas):
+  SELECT inscripcion_id, fecha, COUNT(*) FROM asistencias GROUP BY 1, 2 HAVING COUNT(*) > 1;
+  -- 2) Crear la restricción:
+  ALTER TABLE asistencias
+      ADD CONSTRAINT uk_asistencia_inscripcion_fecha UNIQUE (inscripcion_id, fecha);
+  ```
+* **En una base nueva no hace falta:** Hibernate crea la tabla con la restricción.
+* **Datos corregidos antes de aplicarla:** se borró una asistencia del 31/03/2026 que era anterior a su inscripción (05/04/2026), porque no podía ser real. No había duplicados.
 
 ## Tabla: `usuarios`
 Usuarios que **operan** el sistema (login). Son independientes de `personas`. La tabla ya existía de un diseño previo y se reutilizó, porque `transacciones` la referencia.

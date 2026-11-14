@@ -25,7 +25,11 @@ public class InscripcionService {
         if(persona.getActivo() == null || !persona.getActivo()){
             throw new RuntimeException("La persona seleccionada no esta activa.");
         }
-        Comision comision = comisionService.buscarPorId(comisionId);
+        // Bloquea la comisión hasta el final de esta transacción. Así, dos inscripciones simultáneas a la misma
+        // comisión se hacen de a una: la segunda cuenta los inscriptos recién cuando la primera ya confirmó,
+        // y el cupo no se puede superar. También evita que la misma persona quede inscripta dos veces por un doble clic.
+        // No se exige membresía activa: es intencional (un no socio puede anotarse a una actividad, ver api-spec.md).
+        Comision comision = comisionService.buscarPorIdConBloqueo(comisionId);
         if(comision.getActiva() == null || !comision.getActiva()){
             throw new RuntimeException("La comision seleccionada no esta activa.");
         }

@@ -72,9 +72,20 @@ public class ComisionService {
                 .orElseThrow(() -> new RuntimeException("Comision no encontrado"));
     }
 
+    // Igual que buscarPorId, pero deja la comisión bloqueada (SELECT ... FOR UPDATE) hasta que termine la transacción
+    // del que llama. Propagation REQUIRED (el default): se une a la transacción de la inscripción, así que el bloqueo
+    // dura hasta que esa inscripción confirma o se revierte.
+    @Transactional
+    public Comision buscarPorIdConBloqueo(UUID id) {
+        return comisionRepository.buscarPorIdConBloqueo(id)
+                .orElseThrow(() -> new RuntimeException("Comision no encontrado"));
+    }
+
     @Transactional
     public Comision actualizar(UUID id, ComisionUpdateRequest request) {
-        Comision existente = buscarPorId(id);
+        // Con bloqueo, por el mismo motivo que la inscripción: si no, se podría achicar el cupo
+        // mientras entra una inscripción y quedar con más inscriptos que cupo.
+        Comision existente = buscarPorIdConBloqueo(id);
         if (!existente.getActiva()) {
             throw new RuntimeException("No se puede editar una comisión dada de baja.");
         }

@@ -1,5 +1,7 @@
 package com.clubimperio.gestionclub.asistencia.controllers;
 
+import com.clubimperio.gestionclub.asistencia.dtos.AsistenciaClaseRequest;
+import com.clubimperio.gestionclub.asistencia.dtos.AsistenciaUpdateRequest;
 import com.clubimperio.gestionclub.asistencia.entities.Asistencia;
 import com.clubimperio.gestionclub.asistencia.services.AsistenciaService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,26 @@ public class AsistenciaController {
         LocalDate fechaFinal = (fecha == null) ? LocalDate.now() : fecha;
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(asistenciaService.registrarAsistencia(inscripcionId, fechaFinal, presente, observaciones));
+    }
+
+    // Asistencia de toda una clase en una sola transacción (todo o nada)
+    @PostMapping("/clase")
+    public ResponseEntity<List<Asistencia>> registrarClase(@RequestBody AsistenciaClaseRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(asistenciaService.registrarClase(request));
+    }
+
+    // Lo cargado para una clase: GET /api/asistencias/comision/{id}?fecha=2026-11-14
+    @GetMapping("/comision/{comisionId}")
+    public ResponseEntity<List<Asistencia>> listarPorComisionYFecha(
+            @PathVariable UUID comisionId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha
+    ) {
+        return ResponseEntity.ok(asistenciaService.listarPorComisionYFecha(comisionId, fecha));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Asistencia> corregir(@PathVariable UUID id, @RequestBody AsistenciaUpdateRequest request) {
+        return ResponseEntity.ok(asistenciaService.corregir(id, request));
     }
 
     @GetMapping("/historial/{inscripcionId}")

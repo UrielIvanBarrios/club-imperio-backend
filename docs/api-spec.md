@@ -308,6 +308,8 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
   * La comisión debe existir y estar `activa = true`.
   * El socio no puede tener ya una inscripción **activa** en esa misma comisión.
   * Si la comisión tiene `cupoMaximo`, se rechaza si las inscripciones activas ya lo alcanzaron.
+  * **No se exige membresía activa**, y es intencional: una persona que no es socia puede anotarse a una actividad (por ejemplo, pagando solo la actividad). La membresía es la relación con el club, la inscripción es la relación con una comisión.
+* **Concurrencia:** al inscribir se bloquea la fila de la comisión (`SELECT ... FOR UPDATE`) hasta que termina la transacción. Dos inscripciones simultáneas a la misma comisión se procesan de a una, así que **el cupo nunca se supera** ni la misma persona queda inscripta dos veces por un doble clic. `PUT /api/comisiones/{id}` toma el mismo bloqueo, para que no se pueda achicar el cupo mientras entra una inscripción.
 * **201 Created:** objeto `Inscripcion` con `fechaInscripcion = hoy`.
 * **400 Bad Request:** persona/comisión inexistente o inactiva, inscripción duplicada, o cupo agotado.
 
@@ -355,14 +357,62 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
 ## Recurso: Asistencias
 `Asistencia`: `asistenciaId` (UUID), `inscripcion` (ref. completa), `fecha`, `presente` (default `true`), `observaciones`.
 
+**Reglas de fecha** (las mismas en el alta individual, la carga de la clase y la corrección). Una asistencia solo puede caer dentro del período en que existió la inscripción:
+* no puede ser una **fecha futura**: `"No se puede registrar asistencia en una fecha futura (dd/MM/yyyy)."`;
+* no puede ser **anterior a la fecha de inscripción**: `"La fecha dd/MM/yyyy es anterior a la inscripción (dd/MM/yyyy)."`;
+* si la inscripción está dada de baja, no puede ser **posterior a su `fechaBaja`**.
+
+**Una sola asistencia por inscripción y fecha.** Se valida en el service y además hay una restricción `UNIQUE (inscripcion_id, fecha)` en la base (ver `database-schema.md`). Si dos requests simultáneas pasan el chequeo previo, la base frena a la segunda, que recibe el mismo 400 que un duplicado normal: `"Ya existe un registro de asistencia para este socio en la fecha dd/MM/yyyy."`.
+
 ### 1. Registrar asistencia
 `POST /api/asistencias?inscripcionId={uuid}&fecha={ISO_DATE?}&presente={boolean=true}&observaciones={string?}`
 * `fecha` es opcional; si se omite, se usa la fecha actual del servidor.
-* **Validaciones:** la inscripción debe existir y estar `activo = true`; no puede existir ya un registro de asistencia para esa inscripción en esa misma fecha (previene doble carga).
+* **Validaciones:** la inscripción debe existir y estar `activo = true`; la fecha tiene que cumplir las reglas de arriba; no puede existir ya un registro de asistencia para esa inscripción en esa misma fecha (previene doble carga).
 * **201 Created:** objeto creado.
-* **400 Bad Request:** inscripción inexistente/inactiva, o asistencia duplicada para esa fecha.
+* **400 Bad Request:** inscripción inexistente/inactiva, fecha fuera de rango, o asistencia duplicada para esa fecha.
 
-### 2. Historial de asistencia de una inscripción
+### 2. Registrar la asistencia de una clase (en lote)
+`POST /api/asistencias/clase`
+* **Body:**
+  ```json
+  {
+    "comisionId": "uuid",
+    "fecha": "2026-11-14",
+    "asistencias": [
+      { "inscripcionId": "uuid", "presente": true },
+      { "inscripcionId": "uuid", "presente": false, "observaciones": "Avisó que no venía" }
+    ]
+  }
+  ```
+  `comisionId`, `fecha` y una lista no vacía son obligatorios. En cada fila, `presente` es opcional (default `true`) y `observaciones` también (`""` = sin observaciones).
+* **Todo o nada:** se guarda en una sola transacción. Si **una** fila es inválida, no se guarda **ninguna**.
+* **Validaciones:**
+  * la comisión debe existir y estar activa;
+  * la fecha tiene que cumplir las reglas de arriba;
+  * cada inscripción tiene que existir, ser **de esa comisión**, estar activa, no estar repetida en la lista y no tener ya una asistencia en esa fecha.
+* **201 Created:** `Asistencia[]` con lo guardado.
+* **400 Bad Request:** el `message` junta **todos** los errores encontrados, con el número de fila y el alumno, para que el front pueda mostrarlos de una vez. Ejemplo: `"No se guardó ninguna asistencia. Fila 2 (Pérez, Ana): la inscripción es de otra comisión. Fila 3 (Gómez, Luis): Ya existe un registro de asistencia para este socio en la fecha 14/11/2026."`
+* Una clase ya cargada **no se vuelve a cargar** con este endpoint: da 400 por duplicado. Para corregir una fila se usa el `PUT`.
+
+### 3. Asistencia cargada de una clase
+`GET /api/asistencias/comision/{comisionId}?fecha={ISO_DATE}`
+* `fecha` es obligatoria.
+* **200 OK:** `Asistencia[]` de esa comisión en esa fecha, ordenado por apellido y nombre. Si la clase todavía no se cargó, devuelve `[]`.
+* **400 Bad Request:** la comisión no existe.
+
+### 4. Corregir una asistencia
+`PUT /api/asistencias/{id}`
+* **Body:** `{ "fecha": "2026-11-13", "presente": false, "observaciones": "..." }`. Todos los campos son opcionales, con la misma regla que el resto de los `PUT`:
+  * **ausente o `null`:** no se modifica;
+  * **`observaciones: ""`:** se borran (quedan `null`).
+  
+  No permite cambiar la inscripción.
+* **Validaciones:** si cambia la `fecha`, tiene que cumplir las reglas de arriba y no chocar con otra asistencia de la misma inscripción.
+* **Inscripción dada de baja:** se puede corregir igual, porque corregir un dato histórico mal cargado es válido. Lo que no se puede es *crear* asistencias nuevas para una inscripción dada de baja.
+* **200 OK:** `Asistencia` corregida.
+* **400 Bad Request:** asistencia inexistente, fecha fuera de rango o duplicada.
+
+### 5. Historial de asistencia de una inscripción
 `GET /api/asistencias/historial/{inscripcionId}`
 * **200 OK:** `Asistencia[]` ordenado por fecha descendente (más reciente primero).
 
