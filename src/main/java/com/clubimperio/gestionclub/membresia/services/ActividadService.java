@@ -72,8 +72,9 @@ public class ActividadService {
             }
         }
 
+        // Opcional: "" borra la descripción (queda null) en vez de guardar un string vacío. Ver CamposTexto.
         if (actividadActualizada.getDescripcion() != null) {
-            actividadExistente.setDescripcion(actividadActualizada.getDescripcion());
+            actividadExistente.setDescripcion(CamposTexto.opcional(actividadActualizada.getDescripcion()));
         }
 
         if (actividadActualizada.getPrecioMensual() != null) {

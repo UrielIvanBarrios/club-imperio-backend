@@ -78,17 +78,18 @@ public class PersonaService {
     public Persona actualizar(UUID id, Persona datosNuevos) {
         Persona personaExistente = buscarPorId(id);
 
-        if (datosNuevos.getNombre() != null && !datosNuevos.getNombre().isBlank()) {
-            personaExistente.setNombre(datosNuevos.getNombre());
+        // null = no vino en el body, no se toca. "" = borrar (opcionales) o 400 (obligatorios). Ver CamposTexto.
+        if (datosNuevos.getNombre() != null) {
+            personaExistente.setNombre(CamposTexto.obligatorio(datosNuevos.getNombre(), "El nombre no puede estar vacío."));
         }
-        if (datosNuevos.getApellido() != null && !datosNuevos.getApellido().isBlank()) {
-            personaExistente.setApellido(datosNuevos.getApellido());
+        if (datosNuevos.getApellido() != null) {
+            personaExistente.setApellido(CamposTexto.obligatorio(datosNuevos.getApellido(), "El apellido no puede estar vacío."));
         }
-        if (datosNuevos.getEmail() != null && !datosNuevos.getEmail().isBlank()) {
-            personaExistente.setEmail(datosNuevos.getEmail());
+        if (datosNuevos.getEmail() != null) {
+            personaExistente.setEmail(CamposTexto.opcional(datosNuevos.getEmail()));
         }
-        if (datosNuevos.getTelefonoPrincipal() != null && !datosNuevos.getTelefonoPrincipal().isBlank()) {
-            personaExistente.setTelefonoPrincipal(datosNuevos.getTelefonoPrincipal());
+        if (datosNuevos.getTelefonoPrincipal() != null) {
+            personaExistente.setTelefonoPrincipal(CamposTexto.opcional(datosNuevos.getTelefonoPrincipal()));
         }
         if (datosNuevos.getActivo() != null) {
             personaExistente.setActivo(datosNuevos.getActivo());

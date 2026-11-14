@@ -141,8 +141,14 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
 
 ### 5. Actualizar persona (parcial)
 `PUT /api/personas/{id}`
-* **Body:** JSON `PersonaUpdateRequest` con los campos a modificar (`nombre`, `apellido`, `email`, `telefonoPrincipal`, `activo`). Los campos `null` o strings en blanco se ignoran y no pisan el valor existente. **No permite editar `dni`, ni gestionar membresía** (eso quedó explícitamente fuera de este endpoint).
+* **Body:** JSON `PersonaUpdateRequest` con los campos a modificar (`nombre`, `apellido`, `email`, `telefonoPrincipal`, `activo`). **No permite editar `dni`, ni gestionar membresía** (eso quedó explícitamente fuera de este endpoint).
+* **Regla de los campos de texto** (la misma en `PUT /api/actividades/{id}`):
+  * **Ausente o `null`:** no se modifica.
+  * **`""` (o solo espacios) en un campo opcional** (`email`, `telefonoPrincipal`): se borra y queda en `null`.
+  * **`""` (o solo espacios) en un campo obligatorio** (`nombre`, `apellido`): **400** con `"El nombre no puede estar vacío."` / `"El apellido no puede estar vacío."`.
+  * **Cualquier otro valor:** se guarda sin espacios al principio ni al final.
 * **200 OK:** `PersonaResponse` actualizado.
+* **400 Bad Request:** `nombre` o `apellido` vacíos, o la persona no existe.
 
 ### 6. Eliminar persona (baja lógica)
 `DELETE /api/personas/{id}`
@@ -222,6 +228,7 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
 ### 5. Actualizar actividad (parcial)
 `PUT /api/actividades/{id}`
 * **Body:** JSON `Actividad` con `nombre`, `descripcion`, `precioMensual` y/o `activo`. Si se cambia el nombre, valida que no colisione con otra actividad existente (case-insensitive).
+* **Campos de texto:** misma regla que en `PUT /api/personas/{id}`. Si un campo viene ausente o `null`, no se modifica. `descripcion` es opcional, así que con `""` se borra y queda en `null`. `nombre` es obligatorio, así que con `""` devuelve 400 con `"El nombre no puede estar en blanco."`.
 * **200 OK** / **400 Bad Request** (nombre en blanco, precio negativo, nombre duplicado).
 
 ### 6. Eliminar actividad (baja lógica en cascada)
@@ -237,9 +244,13 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
 
 ### 1. Crear comisión
 `POST /api/comisiones?actividadId={uuid}&nombre={string}&horario={string}&cupo={int?}`
-* **Validación:** la actividad debe existir; no puede existir ya una comisión con la misma combinación `(actividad, nombre, horario)` (case-insensitive). `cupo` es opcional (sin tope si se omite); si viene, **tiene que ser mayor a 0**, igual que en el PUT.
+* **Validaciones:**
+  * la actividad debe existir y **estar activa**: si está dada de baja, devuelve 400 con `"No se puede crear una comisión en una actividad dada de baja."`;
+  * `nombre` y `horario` son obligatorios. Si vienen `""` o solo con espacios, devuelve 400 con `"El nombre de la comisión no puede estar vacío."` / `"El horario de la comisión no puede estar vacío."`. Se guardan sin espacios al principio ni al final, la misma regla de los PUT;
+  * no puede existir ya una comisión con la misma combinación `(actividad, nombre, horario)`. La comparación no distingue mayúsculas y se hace con los valores ya recortados;
+  * `cupo` es opcional: si se omite, la comisión queda sin tope. Si viene, **tiene que ser mayor a 0**, igual que en el PUT.
 * **201 Created:** objeto creado (`activa = true` por defecto).
-* **400 Bad Request:** actividad inexistente, combinación duplicada o `cupo` ≤ 0.
+* **400 Bad Request:** cualquiera de las validaciones anteriores.
 
 ### 2. Listar comisiones de una actividad
 `GET /api/comisiones/actividad/{actividadId}?incluirInactivas={boolean}`
@@ -252,12 +263,20 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
 
 ### 4. Actualizar comisión (parcial)
 `PUT /api/comisiones/{id}`
-* **Body:** JSON `ComisionUpdateRequest` = `{ "nombre": "...", "horario": "...", "cupoMaximo": 20 }`. Todos los campos son opcionales: los `null` se ignoran y a `nombre`/`horario` se les quitan los espacios. No permite cambiar la actividad ni el estado (la baja tiene su propio `DELETE`).
+* **Body:** JSON `ComisionUpdateRequest` = `{ "nombre": "...", "horario": "...", "cupoMaximo": 20, "sinTope": false }`. Todos los campos son opcionales: los `null` se ignoran y a `nombre`/`horario` se les quitan los espacios. No permite cambiar la actividad ni el estado (la baja tiene su propio `DELETE`).
+* **Cupo:**
+  * `cupoMaximo: N` pone o cambia el tope.
+  * `cupoMaximo` ausente o `null` no toca el cupo.
+  * **`sinTope: true` quita el tope**: `cupoMaximo` queda en `null` y la comisión no tiene límite de inscriptos.
+  * `sinTope` ausente, `null` o `false` no hace nada.
+  * Mandar `sinTope: true` junto con un `cupoMaximo` devuelve 400, porque son pedidos contradictorios.
+  * Se usa un campo aparte porque `null` en `cupoMaximo` ya significa "no modificar".
 * **Validaciones:**
   * la comisión debe estar activa;
-  * `nombre` y `horario` no pueden quedar en blanco;
+  * `nombre` y `horario` son obligatorios en la edición: con `""` (o solo espacios) devuelven 400 en vez de borrarse. Si vienen ausentes o `null`, no se modifican;
   * la combinación `(actividad, nombre, horario)` sigue siendo única, sin distinguir mayúsculas y excluyendo a la propia comisión;
-  * `cupoMaximo` tiene que ser mayor a 0 y **no puede ser menor que la cantidad de inscriptos activos**.
+  * `cupoMaximo` tiene que ser mayor a 0 y **no puede ser menor que la cantidad de inscriptos activos**;
+  * `sinTope: true` no se puede combinar con un `cupoMaximo`.
 * **200 OK:** `Comision` actualizada.
 * **400 Bad Request:** cualquiera de las validaciones anteriores.
 

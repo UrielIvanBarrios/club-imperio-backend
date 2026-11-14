@@ -27,6 +27,13 @@ public class ComisionService {
     @Transactional
     public Comision crearComision(UUID actividadId, String nombre, String horario, Integer cupo){
         Actividad actividad = actividadService.buscarPorId(actividadId);
+        // Una actividad dada de baja no puede tener comisiones activas (es lo que garantiza su baja en cascada)
+        if (!Boolean.TRUE.equals(actividad.getActivo())) {
+            throw new RuntimeException("No se puede crear una comisión en una actividad dada de baja.");
+        }
+        // En el alta, nombre y horario son obligatorios: misma regla y mismos mensajes que en el PUT (ver CamposTexto)
+        nombre = CamposTexto.obligatorio(nombre == null ? "" : nombre, "El nombre de la comisión no puede estar vacío.");
+        horario = CamposTexto.obligatorio(horario == null ? "" : horario, "El horario de la comisión no puede estar vacío.");
         // null = sin tope de cupo (sigue permitido). Lo que no se permite es 0 o negativo.
         if (cupo != null) {
             validarCupoPositivo(cupo);
@@ -72,19 +79,18 @@ public class ComisionService {
             throw new RuntimeException("No se puede editar una comisión dada de baja.");
         }
 
+        boolean quitarTope = Boolean.TRUE.equals(request.sinTope());
+        if (quitarTope && request.cupoMaximo() != null) {
+            throw new RuntimeException("No se puede enviar 'cupoMaximo' y 'sinTope': true a la vez. Elegí uno de los dos.");
+        }
+
         String nombreNuevo = existente.getNombre();
         if (request.nombre() != null) {
-            if (request.nombre().isBlank()) {
-                throw new RuntimeException("El nombre de la comisión no puede estar vacío.");
-            }
-            nombreNuevo = request.nombre().trim();
+            nombreNuevo = CamposTexto.obligatorio(request.nombre(), "El nombre de la comisión no puede estar vacío.");
         }
         String horarioNuevo = existente.getHorario();
         if (request.horario() != null) {
-            if (request.horario().isBlank()) {
-                throw new RuntimeException("El horario de la comisión no puede estar vacío.");
-            }
-            horarioNuevo = request.horario().trim();
+            horarioNuevo = CamposTexto.obligatorio(request.horario(), "El horario de la comisión no puede estar vacío.");
         }
 
         // Misma regla que en el alta (Actividad + Nombre + Horario únicos), excluyendo a esta misma comisión
@@ -105,6 +111,10 @@ public class ComisionService {
                         " inscriptos activos de la comisión.");
             }
             existente.setCupoMaximo(request.cupoMaximo());
+        }
+        // Quitar el tope nunca puede dejar inscriptos "sobrando", así que no hace falta validar contra los activos
+        if (quitarTope) {
+            existente.setCupoMaximo(null);
         }
 
         existente.setNombre(nombreNuevo);
