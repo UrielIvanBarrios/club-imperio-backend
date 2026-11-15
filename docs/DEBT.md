@@ -22,7 +22,8 @@ Este documento detalla las simplificaciones tomadas para el MVP y las mejoras ne
 * **Mejora:** Crear `PersonaDTO`, `InscripcionRequest`, etc., para filtrar qué datos entran y salen del sistema.
 * **Avance:**
   * Ya usan DTOs: **Personas** (`PersonaCreateRequest`/`UpdateRequest`/`Response`), **Usuarios** (los DTOs son obligatorios para no exponer el hash de la contraseña) y el **PUT de Comisiones** (`ComisionUpdateRequest`).
-  * Todavía devuelven entidades: Actividades, el resto de Comisiones, Inscripciones, Asistencias y Clases de Prueba.
+  * Las respuestas de **Inscripciones, Asistencias y Clases de Prueba** ya son DTOs (`InscripcionResponse`, `AsistenciaResponse`, `ClasePruebaResponse`). Hacía falta: llevaban la entidad `Persona` adentro y con un socio el JSON entraba en recursión (`Persona` → `Membresia` → `Persona`).
+  * Todavía devuelven entidades: Actividades y Comisiones (también anidadas en esos DTOs). No tienen relaciones hacia atrás, así que no tienen el problema de la recursión; lo que queda pendiente es el riesgo de Mass Assignment de los requests.
 
 ## 5. Auditoría Blindada: Historial de Estados
 * **Estado actual:** Booleano `activo` simple.

@@ -1,6 +1,6 @@
 package com.clubimperio.gestionclub.membresia.controllers;
 
-import com.clubimperio.gestionclub.membresia.entities.ClasePrueba;
+import com.clubimperio.gestionclub.membresia.dtos.ClasePruebaResponse;
 import com.clubimperio.gestionclub.membresia.services.ClasePruebaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -18,17 +18,17 @@ public class ClasePruebaController {
     private final ClasePruebaService clasePruebaService;
 
     @PostMapping("/registrar")
-    public ResponseEntity<ClasePrueba> registrar (
+    public ResponseEntity<ClasePruebaResponse> registrar (
             @RequestParam String dni,
             @RequestParam UUID actividadId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fecha
     ){
-        ClasePrueba nuevaClase = clasePruebaService.registrarClasePrueba(dni, actividadId, fecha);
-        return ResponseEntity.status(201).body(nuevaClase);
+        return ResponseEntity.status(201)
+                .body(ClasePruebaResponse.from(clasePruebaService.registrarClasePrueba(dni, actividadId, fecha)));
     }
     @GetMapping
-    public ResponseEntity<List<ClasePrueba>> listarTodas(){
-        return ResponseEntity.ok(clasePruebaService.listarTodas());
+    public ResponseEntity<List<ClasePruebaResponse>> listarTodas(){
+        return ResponseEntity.ok(clasePruebaService.listarTodas().stream().map(ClasePruebaResponse::from).toList());
     }
 
     @PatchMapping("/{id}/asistencia")

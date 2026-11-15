@@ -1,6 +1,6 @@
 package com.clubimperio.gestionclub.membresia.controllers;
 
-import com.clubimperio.gestionclub.membresia.entities.Inscripcion;
+import com.clubimperio.gestionclub.membresia.dtos.InscripcionResponse;
 import com.clubimperio.gestionclub.membresia.services.InscripcionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,21 +16,21 @@ public class InscripcionController {
     private final InscripcionService inscripcionService;
 
     @PostMapping
-    public ResponseEntity<Inscripcion> inscribir(
+    public ResponseEntity<InscripcionResponse> inscribir(
             @RequestParam String dni,
             @RequestParam UUID comisionId
     ){
-        return ResponseEntity.status(201).body(inscripcionService.inscribirSocio(dni, comisionId));
+        return ResponseEntity.status(201).body(InscripcionResponse.from(inscripcionService.inscribirSocio(dni, comisionId)));
     }
 
     @GetMapping("/socio/{dni}")
-    public ResponseEntity<List<Inscripcion>> listarPorSocio(@PathVariable String dni){
-        return ResponseEntity.ok(inscripcionService.listarPorSocio(dni));
+    public ResponseEntity<List<InscripcionResponse>> listarPorSocio(@PathVariable String dni){
+        return ResponseEntity.ok(inscripcionService.listarPorSocio(dni).stream().map(InscripcionResponse::from).toList());
     }
 
     @GetMapping("/comision/{comisionId}")
-    public ResponseEntity<List<Inscripcion>> listarPorComision(@PathVariable UUID comisionId) {
-        return ResponseEntity.ok(inscripcionService.listarPorComision(comisionId));
+    public ResponseEntity<List<InscripcionResponse>> listarPorComision(@PathVariable UUID comisionId) {
+        return ResponseEntity.ok(inscripcionService.listarPorComision(comisionId).stream().map(InscripcionResponse::from).toList());
     }
 
     @DeleteMapping("/{id}")

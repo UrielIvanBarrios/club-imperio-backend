@@ -56,7 +56,8 @@ Los errores de negocio no tienen excepciones tipadas: cualquier `RuntimeExceptio
 Comportamiento por defecto a tener en cuenta:
 * Si un filtro de listado no devuelve resultados, el status sigue siendo **200 OK** con lista vacía `[]` (no 404).
 * `GET /api/personas` sin query params trae **todas** las personas (activas e inactivas) — no filtra por defecto.
-* El módulo **Personas** ya usa DTOs de request/response (ver más abajo) — no expone la entidad JPA `Persona` ni `Membresia` directamente. El resto de los módulos (`Actividad`, `Comision`, `Inscripcion`, `ClasePrueba`, `Asistencia`) todavía reciben y devuelven las entidades JPA tal cual (ver `docs/DEBT.md`, punto 4, sobre el riesgo de Mass Assignment).
+* **Ninguna respuesta incluye la entidad JPA `Persona`.** Donde aparece una persona (Personas, Inscripciones, Clases de prueba y Asistencias) va siempre como `PersonaResponse`, con la misma forma que en `/api/personas`. La entidad no se puede serializar directo: `Persona.membresias` → cada `Membresia.persona` vuelve a la persona, y con un socio el JSON entraba en recursión infinita (Jackson cortaba a los 500 niveles con "Document nesting depth").
+* Inscripciones, Clases de prueba y Asistencias devuelven DTOs de respuesta (`InscripcionResponse`, `ClasePruebaResponse`, `AsistenciaResponse`). `Actividad` y `Comision` todavía se devuelven como entidades (no tienen relaciones hacia atrás, así que no tienen ese problema), también cuando van anidadas. Los requests de esos módulos siguen recibiendo entidades o query params (ver `docs/DEBT.md`, punto 4, sobre el riesgo de Mass Assignment).
 
 ---
 
@@ -299,7 +300,7 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
 ---
 
 ## Recurso: Inscripciones (el "contrato" Socio–Comisión)
-`Inscripcion`: `inscripcionId` (UUID), `persona` (ref. completa), `comision` (ref. completa), `fechaInscripcion`, `activo`, `fechaCreacion`, `fechaBaja`.
+`InscripcionResponse`: `inscripcionId` (UUID), `persona` (`PersonaResponse`), `comision` (`Comision`, con su `actividad`), `fechaInscripcion`, `activo`, `fechaCreacion`, `fechaBaja`.
 
 ### 1. Inscribir socio
 `POST /api/inscripciones?dni={dni}&comisionId={uuid}`
@@ -310,16 +311,16 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
   * Si la comisión tiene `cupoMaximo`, se rechaza si las inscripciones activas ya lo alcanzaron.
   * **No se exige membresía activa**, y es intencional: una persona que no es socia puede anotarse a una actividad (por ejemplo, pagando solo la actividad). La membresía es la relación con el club, la inscripción es la relación con una comisión.
 * **Concurrencia:** al inscribir se bloquea la fila de la comisión (`SELECT ... FOR UPDATE`) hasta que termina la transacción. Dos inscripciones simultáneas a la misma comisión se procesan de a una, así que **el cupo nunca se supera** ni la misma persona queda inscripta dos veces por un doble clic. `PUT /api/comisiones/{id}` toma el mismo bloqueo, para que no se pueda achicar el cupo mientras entra una inscripción.
-* **201 Created:** objeto `Inscripcion` con `fechaInscripcion = hoy`.
+* **201 Created:** objeto `InscripcionResponse` con `fechaInscripcion = hoy`.
 * **400 Bad Request:** persona/comisión inexistente o inactiva, inscripción duplicada, o cupo agotado.
 
 ### 2. Listar inscripciones activas de un socio
 `GET /api/inscripciones/socio/{dni}`
-* **200 OK:** `Inscripcion[]` (solo activas).
+* **200 OK:** `InscripcionResponse[]` (solo activas).
 
 ### 3. Listar inscripciones activas de una comisión
 `GET /api/inscripciones/comision/{comisionId}`
-* **200 OK:** `Inscripcion[]` (solo activas).
+* **200 OK:** `InscripcionResponse[]` (solo activas).
 
 ### 4. Dar de baja (lógica)
 `DELETE /api/inscripciones/{id}`
@@ -329,7 +330,11 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
 ---
 
 ## Recurso: Clases de Prueba
-`ClasePrueba`: `clasePruebaId` (UUID), `persona` (ref.), `actividad` (ref.), `fechaSolicitada`, `asistio` (bool, default `false`), `costo`, `observaciones`, `fechaCreacion`.
+`ClasePruebaResponse`: `clasePruebaId` (UUID), `persona` (`PersonaResponse`), `actividad` (`Actividad`), `fechaSolicitada`, `asistio` (bool, default `false`), `costo`, `observaciones`, `fechaCreacion`.
+
+**Observaciones** (máximo **500 caracteres**, el largo de la columna). En los dos `PATCH` el texto se guarda recortado y se rechaza con 400, en vez de llegar al error de PostgreSQL:
+* vacío o solo espacios: `"Las observaciones no pueden estar vacías."` / `"La nota no puede estar vacía."`;
+* más de 500 caracteres: `"Las observaciones no pueden superar los 500 caracteres (tienen N)."`. Al agregar una nota se mide el texto completo que quedaría (lo anterior + `" | Nota: "` + la nota): `"No se puede agregar la nota: las observaciones quedarían con N caracteres y el máximo es 500."`.
 
 ### 1. Registrar clase de prueba
 `POST /api/clases-prueba/registrar?dni={dni}&actividadId={uuid}&fecha={ISO_DATE_TIME}`
@@ -340,22 +345,22 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
 
 ### 2. Listar todas
 `GET /api/clases-prueba`
-* **200 OK:** `ClasePrueba[]`.
+* **200 OK:** `ClasePruebaResponse[]`.
 
 ### 3. Marcar asistencia
 `PATCH /api/clases-prueba/{id}/asistencia?asistio={boolean}&observaciones={string?}`
-* Sobreescribe `asistio` y `observaciones` (no concatena).
-* **204 No Content** / **400 Bad Request** si la clase no existe.
+* Sobreescribe `asistio`. Si viene `observaciones`, también las reemplaza (no concatena). **Si no viene, las observaciones que ya había quedan como estaban** (antes se pisaban con `null`).
+* **204 No Content** / **400 Bad Request** si la clase no existe o las observaciones son vacías o muy largas.
 
 ### 4. Agregar observación
 `PATCH /api/clases-prueba/{id}/observacion?nota={string}`
 * **Concatena** la nota nueva al historial existente con el formato `"... | Nota: {nota}"` (no pisa lo anterior).
-* **204 No Content** / **400 Bad Request** si la clase no existe.
+* **204 No Content** / **400 Bad Request** si la clase no existe, la nota es vacía o el total pasaría los 500 caracteres.
 
 ---
 
 ## Recurso: Asistencias
-`Asistencia`: `asistenciaId` (UUID), `inscripcion` (ref. completa), `fecha`, `presente` (default `true`), `observaciones`.
+`AsistenciaResponse`: `asistenciaId` (UUID), `inscripcion` (`InscripcionResponse`, con la persona como `PersonaResponse`), `fecha`, `presente` (default `true`), `observaciones`.
 
 **Reglas de fecha** (las mismas en el alta individual, la carga de la clase y la corrección). Una asistencia solo puede caer dentro del período en que existió la inscripción:
 * no puede ser una **fecha futura**: `"No se puede registrar asistencia en una fecha futura (dd/MM/yyyy)."`;
@@ -390,14 +395,14 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
   * la comisión debe existir y estar activa;
   * la fecha tiene que cumplir las reglas de arriba;
   * cada inscripción tiene que existir, ser **de esa comisión**, estar activa, no estar repetida en la lista y no tener ya una asistencia en esa fecha.
-* **201 Created:** `Asistencia[]` con lo guardado.
+* **201 Created:** `AsistenciaResponse[]` con lo guardado.
 * **400 Bad Request:** el `message` junta **todos** los errores encontrados, con el número de fila y el alumno, para que el front pueda mostrarlos de una vez. Ejemplo: `"No se guardó ninguna asistencia. Fila 2 (Pérez, Ana): la inscripción es de otra comisión. Fila 3 (Gómez, Luis): Ya existe un registro de asistencia para este socio en la fecha 14/11/2026."`
 * Una clase ya cargada **no se vuelve a cargar** con este endpoint: da 400 por duplicado. Para corregir una fila se usa el `PUT`.
 
 ### 3. Asistencia cargada de una clase
 `GET /api/asistencias/comision/{comisionId}?fecha={ISO_DATE}`
 * `fecha` es obligatoria.
-* **200 OK:** `Asistencia[]` de esa comisión en esa fecha, ordenado por apellido y nombre. Si la clase todavía no se cargó, devuelve `[]`.
+* **200 OK:** `AsistenciaResponse[]` de esa comisión en esa fecha, ordenado por apellido y nombre. Si la clase todavía no se cargó, devuelve `[]`.
 * **400 Bad Request:** la comisión no existe.
 
 ### 4. Corregir una asistencia
@@ -414,7 +419,7 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
 
 ### 5. Historial de asistencia de una inscripción
 `GET /api/asistencias/historial/{inscripcionId}`
-* **200 OK:** `Asistencia[]` ordenado por fecha descendente (más reciente primero).
+* **200 OK:** `AsistenciaResponse[]` ordenado por fecha descendente (más reciente primero).
 
 ---
 

@@ -12,6 +12,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ClasePrueba {
+    // Largo de la columna observaciones; el service lo valida antes de guardar para dar un 400 claro
+    public static final int LARGO_MAX_OBSERVACIONES = 500;
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -34,7 +36,7 @@ public class ClasePrueba {
 
     private Double costo;
 
-    @Column(length = 500)
+    @Column(length = LARGO_MAX_OBSERVACIONES)
     private String observaciones;
 
     @Column(name = "fecha_creacion", updatable = false)
