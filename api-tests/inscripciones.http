@@ -9,3 +9,18 @@ Authorization: Bearer {{token}}
 ### 3. Consultar inscripciones de un socio
 GET http://localhost:8080/api/inscripciones/socio/40011019
 Authorization: Bearer {{token}}
+### 4. Listado con filtros: activas por defecto
+GET http://localhost:8080/api/inscripciones
+Authorization: Bearer {{token}}
+
+### 5. Listado: por actividad y comisión (400 si la comisión no es de esa actividad)
+GET http://localhost:8080/api/inscripciones?actividadId=REEMPLAZAR&comisionId=57c1c07e-5689-42d6-a48c-bb2e1fc22c64
+Authorization: Bearer {{token}}
+
+### 6. Listado: búsqueda sin tildes ni mayúsculas, incluyendo las bajas
+GET http://localhost:8080/api/inscripciones?q=nunez&estado=todas
+Authorization: Bearer {{token}}
+
+### 7. Listado: solo las bajas
+GET http://localhost:8080/api/inscripciones?estado=bajas
+Authorization: Bearer {{token}}

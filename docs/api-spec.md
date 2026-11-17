@@ -314,15 +314,45 @@ El estado de socio ya **no** es un flag booleano (`esSocio`) en `Persona`; ahora
 * **201 Created:** objeto `InscripcionResponse` con `fechaInscripcion = hoy`.
 * **400 Bad Request:** persona/comisión inexistente o inactiva, inscripción duplicada, o cupo agotado.
 
-### 2. Listar inscripciones activas de un socio
+### 2. Listado con filtros (tabla de inscripciones)
+`GET /api/inscripciones?actividadId={uuid?}&comisionId={uuid?}&q={texto?}&estado={activas|bajas|todas}`
+* **Todos los parámetros son opcionales** y se pueden combinar (se aplican con AND):
+  * `actividadId`: inscripciones de las comisiones de esa actividad.
+  * `comisionId`: inscripciones de esa comisión.
+  * `q`: busca por **DNI** (también parcial o con puntos: `40.011.019`), por **nombre y apellido** o por **apellido y nombre** (`juan perez` y `perez juan` encuentran a la misma persona). No distingue mayúsculas ni tildes, y la ñ cuenta como n: `nunez` encuentra a "Núñez". Busca por "contiene". Los espacios repetidos se ignoran, y `%` y `_` se buscan como texto, no como comodines.
+  * `estado`: `activas` (**default**), `bajas` o `todas`. No distingue mayúsculas.
+* **Orden:** apellido y nombre de la persona. Para desempatar (una persona con varias inscripciones): nombre de la actividad, nombre de la comisión y fecha de inscripción, de la más nueva a la más vieja.
+* **Rendimiento:** se resuelve en **una sola consulta** a la base (JOIN de inscripción, persona, comisión y actividad). `esSocioActivo` se calcula en la misma consulta con un `EXISTS` sobre membresías, sin cargar las membresías de cada persona (sin N+1). Si vienen `actividadId` y `comisionId`, antes se hace una consulta más para validar que la comisión sea de esa actividad.
+* **200 OK:** `InscripcionListadoResponse[]` (array vacío si no hay resultados). Es una versión reducida, pensada para la tabla:
+```json
+[
+  {
+    "inscripcionId": "uuid",
+    "fechaInscripcion": "2026-11-17",
+    "activo": true,
+    "fechaBaja": null,
+    "persona":   { "personaId": "uuid", "dni": "40011019", "nombre": "José", "apellido": "Núñez", "esSocioActivo": true },
+    "comision":  { "comisionId": "uuid", "nombre": "Infantiles", "horario": "Lun y Mie 18hs" },
+    "actividad": { "actividadId": "uuid", "nombre": "Fútbol" }
+  }
+]
+```
+* **400 Bad Request:**
+  * `comisionId` no pertenece a `actividadId`: `"La comisión {nombre} no pertenece a la actividad indicada."`
+  * vienen `actividadId` y `comisionId`, y la comisión no existe: `"Comision no encontrado"`.
+  * `estado` inválido: `"El estado debe ser 'activas', 'bajas' o 'todas'."`
+  * un UUID mal formado en `actividadId` o `comisionId`.
+* Una `actividadId` o `comisionId` inexistente, usada **sola**, no es un error: devuelve `[]`, como cualquier filtro sin resultados.
+
+### 3. Listar inscripciones activas de un socio
 `GET /api/inscripciones/socio/{dni}`
 * **200 OK:** `InscripcionResponse[]` (solo activas).
 
-### 3. Listar inscripciones activas de una comisión
+### 4. Listar inscripciones activas de una comisión
 `GET /api/inscripciones/comision/{comisionId}`
 * **200 OK:** `InscripcionResponse[]` (solo activas).
 
-### 4. Dar de baja (lógica)
+### 5. Dar de baja (lógica)
 `DELETE /api/inscripciones/{id}`
 * Marca `activo = false` y `fechaBaja = hoy`. Libera el cupo de la comisión.
 * **204 No Content**.

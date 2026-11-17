@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface InscripcionRepository extends JpaRepository<Inscripcion, UUID> {
+public interface InscripcionRepository extends JpaRepository<Inscripcion, UUID>, InscripcionRepositoryCustom {
     long countByComision_ComisionIdAndActivoTrue(UUID comisionId);
 
     boolean existsByPersona_DniAndComision_ComisionIdAndActivoTrue(String dni, UUID comisionId);

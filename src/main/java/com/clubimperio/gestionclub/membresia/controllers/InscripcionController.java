@@ -1,5 +1,6 @@
 package com.clubimperio.gestionclub.membresia.controllers;
 
+import com.clubimperio.gestionclub.membresia.dtos.InscripcionListadoResponse;
 import com.clubimperio.gestionclub.membresia.dtos.InscripcionResponse;
 import com.clubimperio.gestionclub.membresia.services.InscripcionService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,17 @@ public class InscripcionController {
             @RequestParam UUID comisionId
     ){
         return ResponseEntity.status(201).body(InscripcionResponse.from(inscripcionService.inscribirSocio(dni, comisionId)));
+    }
+
+    // Listado para la tabla del front. Todos los filtros son opcionales y se pueden combinar.
+    @GetMapping
+    public ResponseEntity<List<InscripcionListadoResponse>> listar(
+            @RequestParam(required = false) UUID actividadId,
+            @RequestParam(required = false) UUID comisionId,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false, defaultValue = "activas") String estado
+    ) {
+        return ResponseEntity.ok(inscripcionService.listar(actividadId, comisionId, q, estado));
     }
 
     @GetMapping("/socio/{dni}")
